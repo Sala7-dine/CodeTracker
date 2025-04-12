@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController as ControllersDashboardController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -41,6 +43,13 @@ Route::middleware('auth')->controller(AdminController::class)->group( function()
 
 });
 
+
+// Route::get('/', function () {
+//     return redirect()->route('dashboard');
+// });
+
+Route::get('/dashboard', [ControllersDashboardController::class, 'index'])->name('dashboard');
+Route::get('/dashboard/project/{id}', [ControllersDashboardController::class, 'project'])->name('dashboard.project');
 
 
 

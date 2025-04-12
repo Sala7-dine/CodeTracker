@@ -1,14 +1,15 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-
 
 Route::post("/logout" , [AuthController::class , 'logout'])->name("logout");
 
 Route::get('/', function () {
-    if (auth()->check()) {
+    if (Auth::check()) {
         return redirect()->route('user.dashboard');
     }
     return app(UserController::class)->home();
@@ -29,6 +30,14 @@ Route::middleware('guest')->controller(AuthController::class)->group( function()
 Route::middleware('auth')->controller(UserController::class)->group( function(){
 
     Route::get("/user/dashboard" , "index")->name('user.dashboard');
+   
+
+});
+
+
+Route::middleware('auth')->controller(AdminController::class)->group( function(){
+
+    Route::get("/admin/dashboard" , "index")->name('admin.dashboard');
 
 });
 

@@ -1,17 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeTrack - Dashboard</title>
-    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/phosphor-icons"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen">
-    <!-- Sidebar -->
+<x-app-layout>
     <aside class="fixed left-0 top-0 h-screen w-20 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-8 space-y-8">
         <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center">
             <i class="ph-code text-2xl text-white"></i>
@@ -323,5 +310,4 @@
             }
         });
     </script>
-</body>
-</html>
+</x-app-layout>

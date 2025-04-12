@@ -29,9 +29,11 @@ Route::middleware('guest')->controller(AuthController::class)->group( function()
 });
 
 
-Route::middleware('auth')->controller(UserController::class)->group( function(){
+Route::middleware('auth')->group( function(){
 
-    Route::get("/user/dashboard" , "index")->name('user.dashboard');
+    // Route::get("/user/dashboard" , [UserController::class , "index"])->name('user.dashboard');
+    Route::get('/user/dashboard', [ControllersDashboardController::class, 'index'])->name('user.dashboard');
+    Route::get('/dashboard/project/{id}', [ControllersDashboardController::class, 'project'])->name('dashboard.project');
    
 
 });
@@ -48,8 +50,7 @@ Route::middleware('auth')->controller(AdminController::class)->group( function()
 //     return redirect()->route('dashboard');
 // });
 
-Route::get('/dashboard', [ControllersDashboardController::class, 'index'])->name('dashboard');
-Route::get('/dashboard/project/{id}', [ControllersDashboardController::class, 'project'])->name('dashboard.project');
+
 
 
 

@@ -133,6 +133,13 @@ class DashboardController extends Controller
         // Formater le temps total pour le projet
         $formattedTime = Language::formatTime($project->getTotalTime());
 
-        return view('dashboard.project', compact('project', 'activities', 'currentFile', 'formattedTime'));
+        return view('dashboard.user.project', compact('project', 'activities', 'currentFile', 'formattedTime'));
+    }
+
+    public function projects()
+    {
+        $projects = Project::with('languages')->get();
+        
+        return view('dashboard.user.projects', compact('projects'));
     }
 }

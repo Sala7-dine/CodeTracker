@@ -29,13 +29,10 @@ Route::middleware('guest')->controller(AuthController::class)->group( function()
 });
 
 
-Route::middleware('auth')->group( function(){
-
-    // Route::get("/user/dashboard" , [UserController::class , "index"])->name('user.dashboard');
+Route::middleware(['auth'])->group(function() {
     Route::get('/user/dashboard', [ControllersDashboardController::class, 'index'])->name('user.dashboard');
-    Route::get('/dashboard/project/{id}', [ControllersDashboardController::class, 'project'])->name('dashboard.project');
-   
-
+    Route::get('/dashboard/projects', [ControllersDashboardController::class, 'projects'])->name('user.dashboard.projects');
+    Route::get('/dashboard/project/{id}', [ControllersDashboardController::class, 'project'])->name('user.dashboard.project');
 });
 
 

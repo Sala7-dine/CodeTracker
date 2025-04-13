@@ -380,6 +380,7 @@
                     
                     <div class="mt-4">
                         @if($project->languages && $project->languages->count() > 0)
+                            <!-- Section avec les langages de projets -->
                             @foreach($project->languages->take(3) as $language)
                             <div class="flex items-center justify-between text-sm mb-2">
                                 <div class="flex items-center">
@@ -407,7 +408,7 @@
                                     <i class="{{ $iconClass }} {{ $textColor }} mr-2"></i>
                                     <span class="text-gray-300">{{ $language->name }}</span>
                                 </div>
-                                
+                                <span class="text-gray-400">{{ \App\Models\Language::formatTime($language->time_spent ?? $language->time_ms ?? 0) }}</span>
                             </div>
                             @endforeach
                         @else

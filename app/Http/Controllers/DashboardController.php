@@ -12,6 +12,7 @@ class DashboardController extends Controller
     public function index()
     {
         $projects = Project::with('languages')->get();
+        
         $number_of_projects = Project::with('languages')->count();
         
         // Récupérer l'activité la plus récente pour déterminer le fichier et projet actuels
@@ -37,9 +38,18 @@ class DashboardController extends Controller
             ],
             'currentProject' => null // Pour stocker les infos du projet actuel
         ];
+
         
         if ($latestActivity && $latestActivity->project) {
             $activeProject = $latestActivity->project;
+            
+            // Vérifier si stats existe et contient currentFile
+            $timeSpent = $latestActivity->duration * 1000; // Valeur par défaut
+            if (isset($latestActivity->stats) && is_array($latestActivity->stats) && 
+                isset($latestActivity->stats['currentFile']) && 
+                isset($latestActivity->stats['currentFile']['timeSpent'])) {
+                $timeSpent = $latestActivity->stats['currentFile']['timeSpent'] * 1000;
+            }
             
             // Informations sur le projet actuel
             $globalStats['currentProject'] = [
@@ -48,6 +58,7 @@ class DashboardController extends Controller
                 'totalFiles' => $activeProject->getTotalFiles(),
                 'totalLines' => $activeProject->getTotalLines(),
                 'totalTime' => $activeProject->getTotalTime(),
+                'timeSpent' => $timeSpent,
                 'formattedTime' => Language::formatTime($activeProject->getTotalTime())
             ];
             
@@ -57,28 +68,36 @@ class DashboardController extends Controller
                 'path' => $latestActivity->file_path,
                 'language' => $latestActivity->language ?? 'inconnu',
                 'lines' => $latestActivity->lines,
-                // 'timeSpent' => $latestActivity->duration * 1000, // Convertir en ms pour formater
+                'timeSpent' => $timeSpent,
                 'formattedTime' => Language::formatTime($latestActivity->duration * 1000),
                 'lastActive' => $latestActivity->created_at->diffForHumans(),
                 'edits' => rand(15, 30), // À remplacer par des données réelles
                 'efficiency' => rand(85, 99) . '%', // À remplacer par des données réelles
                 'project' => $activeProject->name
             ];
-            
+
             // Récupérer toutes les technologies (langages) du projet actuel uniquement
-            $projectLanguages = Language::where('project_id', $activeProject->id)
-               
-                ->get();
+            $projectLanguages = Language::where('project_id', $activeProject->id)->get();
             
             foreach ($projectLanguages as $language) {
                 $langName = $language->name;
+                
+                // Identifier le bon champ pour le temps
+                $languageTime = 0;
+                if (isset($language->time_spent)) {
+                    $languageTime = $language->time_spent;
+                } elseif (isset($language->time_ms)) {
+                    $languageTime = $language->time_ms;
+                } elseif (isset($language->duration)) {
+                    $languageTime = $language->duration * 1000;
+                }
                 
                 $globalStats['languages'][$langName] = [
                     'name' => $langName,
                     'files' => $language->files,
                     'lines' => $language->lines,
-                    // 'time_spent' => $language->time_spent,
-                    'formattedTime' => Language::formatTime($language->time_spent)
+                    'time_spent' => $languageTime,
+                    'formattedTime' => Language::formatTime($languageTime)
                 ];
             }
         }
@@ -99,6 +118,7 @@ class DashboardController extends Controller
     public function project($id)
     {
         $project = Project::with('languages', 'activities')->findOrFail($id);
+     
         $activities = $project->activities()
             ->orderBy('created_at', 'desc')
             ->take(50)

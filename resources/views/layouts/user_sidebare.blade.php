@@ -14,7 +14,7 @@
         <a href="#" class="w-12 h-12 rounded-xl hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-all">
             <i class="ph-chart-line-up text-xl"></i>
         </a>
-        <a href="#" class="w-12 h-12 rounded-xl hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+        <a href=" {{ route('profile') }} " class="w-12 h-12 rounded-xl hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-all">
             <i class="ph-gear-six text-xl"></i>
         </a>
         <!-- Logout icon -->

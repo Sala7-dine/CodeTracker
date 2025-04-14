@@ -33,6 +33,7 @@ Route::middleware(['auth'])->group(function() {
     Route::get('/user/dashboard', [ControllersDashboardController::class, 'index'])->name('user.dashboard');
     Route::get('/dashboard/projects', [ControllersDashboardController::class, 'projects'])->name('user.dashboard.projects');
     Route::get('/dashboard/project/{id}', [ControllersDashboardController::class, 'project'])->name('user.dashboard.project');
+    Route::get('/dashboard/profile', [UserController::class, 'profile'])->name('profile');
 });
 
 

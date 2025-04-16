@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\Language;
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -31,8 +32,54 @@ class ActivityController extends Controller
         }
         
         try {
-            // Récupérer ou créer le projet
-            $project = Project::firstOrCreate(['name' => $request->project]);
+            // Obtenir un utilisateur valide (soit authentifié, soit par défaut)
+            $userId = null;
+            
+            // Option 1: Essayer de récupérer l'utilisateur authentifié
+            if (auth()->check()) {
+                $userId = auth()->id();
+            }
+            
+            // Option 2: Utiliser un utilisateur passé dans la requête
+            if (!$userId && $request->has('user_id')) {
+                $userId = $request->user_id;
+            }
+            
+            // Option 3: Utiliser un API key si présent dans l'en-tête
+            if (!$userId && $request->hasHeader('X-API-KEY')) {
+                $apiKey = $request->header('X-API-KEY');
+                $user = User::where('api_key', $apiKey)->first();
+                if ($user) {
+                    $userId = $user->id;
+                }
+            }
+            
+            // Option 4: Utiliser l'utilisateur par défaut (ici l'ID 1)
+            if (!$userId) {
+                // Pour le développement/démo, utiliser le premier utilisateur
+                $user = User::first();
+                if ($user) {
+                    $userId = $user->id;
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Aucun utilisateur trouvé dans le système'
+                    ], 500);
+                }
+            }
+            
+            // Récupérer ou créer le projet avec user_id
+            $project = Project::firstOrCreate(
+                ['name' => $request->project, 'user_id' => $userId],
+                [
+                    'user_id' => $userId,
+                    'description' => 'Projet créé automatiquement',
+                    'environment_info' => [
+                        'editor' => 'VS Code',
+                        'os' => PHP_OS,
+                    ]
+                ]
+            );
             
             // Extraire le nom du fichier depuis le chemin
             $fileName = basename($request->file);

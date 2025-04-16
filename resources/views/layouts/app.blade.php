@@ -25,6 +25,34 @@
     </head>
     <body class="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen">
         
+        @if (session('success'))
+            <div id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                {{ session('success') }}
+            </div>
+
+            <script>
+                setTimeout(function() {
+                    document.getElementById('success-notification').style.display = 'none';
+                }, 5000);
+            </script>
+        @endif
+
+        @if (session('error'))
+            <div class="fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center"
+                 x-data="{ show: true }" 
+                 x-show="show" 
+                 x-init="setTimeout(() => show = false, 5000)"
+                 x-transition:leave="transition ease-in duration-300"
+                 x-transition:leave-start="opacity-100 transform scale-100"
+                 x-transition:leave-end="opacity-0 transform scale-90">
+                <i class="ph-warning-circle mr-2 text-xl"></i>
+                {{ session('error') }}
+                <button @click="show = false" class="ml-4 text-white/80 hover:text-white">
+                    <i class="ph-x"></i>
+                </button>
+            </div>
+        @endif
+
         {{ $slot }}
 
         <!-- Projet Selection Modal -->

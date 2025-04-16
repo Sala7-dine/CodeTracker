@@ -9,12 +9,20 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
+    public function up(): void{
+        
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('firstname');
-            $table->string('lastname');
+            $table->string('firstname')->nullable();
+            $table->string('lastname')->nullable();
+            $table->string('username')->nullable()->unique();
+            $table->text('bio')->nullable();
+            $table->string('profile_image')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('website')->nullable();
+            $table->string('country')->nullable();
+            $table->string('city')->nullable();
+            $table->json('preferences')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
@@ -44,7 +52,23 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('name')->nullable();
+            
+            $table->dropColumn([
+                'firstname', 
+                'lastname', 
+                'username', 
+                'bio', 
+                'profile_image', 
+                'phone', 
+                'website', 
+                'country', 
+                'city', 
+                'preferences'
+            ]);
+        });
+
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
     }

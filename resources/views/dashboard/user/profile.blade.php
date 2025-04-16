@@ -43,34 +43,38 @@
             <div class="flex justify-between items-end -mt-12 px-8">
                 <div class="flex items-end">
                     <div class="relative group mr-6">
-                        <div class="w-24 h-24 rounded-full border-4 border-gray-800 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl overflow-hidden shadow-lg">
-                            <img src="https://ui-avatars.com/api/?name=John+Doe&background=6366f1&color=fff&size=120" alt="John Doe" class="w-full h-full object-cover">
+                        <form action="{{ route('profile.update.image') }}" method="POST" enctype="multipart/form-data" id="profile-image-form">
+                            @csrf
+                            <div class="w-24 h-24 rounded-full border-4 border-gray-800 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl overflow-hidden shadow-lg">
+                                <img src="{{ $user->profile_image_url ?? 'https://ui-avatars.com/api/?name='.$user->firstname.'+'.$user->lastname.'&background=6366f1&color=fff&size=120' }}" 
+                                     alt="{{ $user->firstname }} {{ $user->lastname }}" class="w-full h-full object-cover">
+                                
+                                <!-- Effet de lumière dynamique -->
+                                <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            </div>
                             
-                            <!-- Effet de lumière dynamique -->
-                            <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        </div>
-                        
-                        <!-- Badge de statut -->
-                        <div class="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-gray-800"></div>
-                        
-                        <!-- Overlay d'upload au hover -->
-                        <div class="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all cursor-pointer">
-                            <label for="profile-image" class="text-white">
-                                <i class="ph-camera text-xl"></i>
-                                <input type="file" id="profile-image" class="hidden">
-                            </label>
-                        </div>
+                            <!-- Badge de statut -->
+                            <div class="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-gray-800"></div>
+                            
+                            <!-- Overlay d'upload au hover -->
+                            <div class="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all cursor-pointer">
+                                <label for="profile-image-input" class="text-white cursor-pointer">
+                                    <i class="ph-camera text-xl"></i>
+                                    <input type="file" id="profile-image-input" name="profile_image" class="hidden" onchange="document.getElementById('profile-image-form').submit()">
+                                </label>
+                            </div>
+                        </form>
                     </div>
                     
                     <div>
                         <div class="flex items-center">
-                            <h1 class="text-2xl font-bold text-white">John Doe</h1>
+                            <h1 class="text-2xl font-bold text-white">{{ $user->firstname ?? 'John' }} {{ $user->lastname ?? 'Doe' }}</h1>
                             <span class="ml-3 px-2 py-1 rounded-full text-xs bg-indigo-500/20 text-indigo-300 flex items-center">
                                 <i class="ph-check-circle text-xs mr-1"></i>
-                                Pro
+                                {{ $user->role == 'admin' ? 'Admin' : 'Pro' }}
                             </span>
                         </div>
-                        <p class="text-gray-400">Développeur Full Stack • Actif depuis 124 jours</p>
+                        <p class="text-gray-400">Développeur Full Stack • Membre depuis {{ $user->created_at->diffForHumans() }}</p>
                     </div>
                 </div>
                 
@@ -170,10 +174,13 @@
                             </div>
                         </div>
                         
-                        <button class="w-full flex items-center justify-between px-4 py-2 bg-gray-700/60 hover:bg-gray-700 rounded-xl text-gray-300 transition-colors group">
+                        <form action="{{ route('profile.update.password') }}" method="POST" class="w-full flex items-center justify-between px-4 py-2 bg-gray-700/60 hover:bg-gray-700 rounded-xl text-gray-300 transition-colors">
+                            @csrf
                             <span>Changer le mot de passe</span>
-                            <i class="ph-lock-key text-indigo-400 group-hover:rotate-12 transition-transform"></i>
-                        </button>
+                            <button type="submit" class="bg-transparent border-0">
+                                <i class="ph-lock-key text-indigo-400 group-hover:rotate-12 transition-transform"></i>
+                            </button>
+                        </form>
                         
                         <button class="w-full flex items-center justify-between px-4 py-2 bg-gray-700/60 hover:bg-gray-700 rounded-xl text-gray-300 transition-colors group">
                             <span>Authentification 2FA</span>
@@ -191,7 +198,8 @@
             <!-- Colonne 2: Informations personnelles -->
             <div class="col-span-12 lg:col-span-6 space-y-6">
                 <!-- Informations de base -->
-                <div class="bg-gray-800/40 backdrop-blur-sm p-5 rounded-2xl border border-gray-700">
+                <form action="{{ route('profile.update') }}" method="POST" class="bg-gray-800/40 backdrop-blur-sm p-5 rounded-2xl border border-gray-700">
+                    @csrf
                     <div class="flex items-center mb-6">
                         <div class="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center mr-3">
                             <i class="ph-user text-indigo-400 text-xl"></i>
@@ -206,45 +214,57 @@
                         <div>
                             <label for="firstname" class="block text-gray-400 text-sm mb-2">Prénom</label>
                             <div class="relative">
-                                <input type="text" id="firstname" name="firstname" value="John" 
+                                <input type="text" id="firstname" name="firstname" value="{{ $user->firstname ?? '' }}" 
                                        class="w-full bg-gray-700/50 border border-gray-600 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-indigo-400">
                                     <i class="ph-user-focus"></i>
                                 </div>
                             </div>
+                            @error('firstname')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
                             <label for="lastname" class="block text-gray-400 text-sm mb-2">Nom</label>
                             <div class="relative">
-                                <input type="text" id="lastname" name="lastname" value="Doe" 
+                                <input type="text" id="lastname" name="lastname" value="{{ $user->lastname ?? '' }}" 
                                        class="w-full bg-gray-700/50 border border-gray-600 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-indigo-400">
                                     <i class="ph-user-focus"></i>
                                 </div>
                             </div>
+                            @error('lastname')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
                             <label for="email" class="block text-gray-400 text-sm mb-2">Email</label>
                             <div class="relative">
-                                <input type="email" id="email" name="email" value="john.doe@example.com" 
+                                <input type="email" id="email" name="email" value="{{ $user->email ?? '' }}" 
                                        class="w-full bg-gray-700/50 border border-gray-600 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-indigo-400">
                                     <i class="ph-at"></i>
                                 </div>
                             </div>
+                            @error('email')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
                             <label for="username" class="block text-gray-400 text-sm mb-2">Nom d'utilisateur</label>
                             <div class="relative">
-                                <input type="text" id="username" name="username" value="johndoe" 
+                                <input type="text" id="username" name="username" value="{{ $user->username ?? '' }}" 
                                        class="w-full bg-gray-700/50 border border-gray-600 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-indigo-400">
                                     <i class="ph-identification-badge"></i>
                                 </div>
                             </div>
+                            @error('username')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
                     
@@ -254,17 +274,28 @@
                         <div class="relative">
                             <textarea id="bio" name="bio" rows="4" 
                                       class="w-full bg-gray-700/50 border border-gray-600 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                                      placeholder="Parlez-nous de vous...">Développeur passionné par les technologies web et l'amélioration continue des applications. J'aime résoudre des problèmes complexes et apprendre de nouvelles technologies.</textarea>
+                                      placeholder="Parlez-nous de vous...">{{ $user->bio ?? 'Développeur passionné par les technologies web et l\'amélioration continue des applications. J\'aime résoudre des problèmes complexes et apprendre de nouvelles technologies.' }}</textarea>
                             <div class="absolute bottom-3 right-3 text-gray-500 text-xs">
-                                <span id="bio-count">120</span>/200
+                                <span id="bio-count">{{ strlen($user->bio ?? '') }}</span>/200
                             </div>
                         </div>
+                        @error('bio')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
-                </div>
+                    
+                    <div class="mt-6">
+                        <button type="submit" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-white hover:from-indigo-500 hover:to-purple-500 transition-all flex items-center shadow-lg shadow-indigo-500/20">
+                            <i class="ph-floppy-disk text-lg mr-1.5"></i>
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
        
                 
                 <!-- Coordonnées et localisation -->
-                <div class="bg-gray-800/40 backdrop-blur-sm p-5 rounded-2xl border border-gray-700">
+                <form action="{{ route('profile.update') }}" method="POST" class="bg-gray-800/40 backdrop-blur-sm p-5 rounded-2xl border border-gray-700">
+                    @csrf
                     <div class="flex items-center mb-6">
                         <div class="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center mr-3">
                             <i class="ph-map-pin text-blue-400 text-xl"></i>
@@ -279,23 +310,29 @@
                         <div>
                             <label for="phone" class="block text-gray-400 text-sm mb-2">Téléphone</label>
                             <div class="relative">
-                                <input type="text" id="phone" name="phone" placeholder="+33 6 12 34 56 78" 
+                                <input type="text" id="phone" name="phone" value="{{ $user->phone ?? '' }}" placeholder="+33 6 12 34 56 78" 
                                        class="w-full bg-gray-700/50 border border-gray-600 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-indigo-400">
                                     <i class="ph-phone"></i>
                                 </div>
                             </div>
+                            @error('phone')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                         
                         <div>
                             <label for="website" class="block text-gray-400 text-sm mb-2">Site web</label>
                             <div class="relative">
-                                <input type="url" id="website" name="website" placeholder="https://example.com" 
+                                <input type="url" id="website" name="website" value="{{ $user->website ?? '' }}" placeholder="https://example.com" 
                                        class="w-full bg-gray-700/50 border border-gray-600 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-indigo-400">
                                     <i class="ph-globe"></i>
                                 </div>
                             </div>
+                            @error('website')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                         
                         <div>
@@ -303,29 +340,42 @@
                             <div class="relative">
                                 <select id="country" name="country" 
                                        class="w-full bg-gray-700/50 border border-gray-600 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none">
-                                    <option value="FR">France</option>
-                                    <option value="US">États-Unis</option>
-                                    <option value="CA">Canada</option>
-                                    <option value="UK">Royaume-Uni</option>
+                                    <option value="FR" {{ ($user->country ?? '') == 'FR' ? 'selected' : '' }}>France</option>
+                                    <option value="US" {{ ($user->country ?? '') == 'US' ? 'selected' : '' }}>États-Unis</option>
+                                    <option value="CA" {{ ($user->country ?? '') == 'CA' ? 'selected' : '' }}>Canada</option>
+                                    <option value="UK" {{ ($user->country ?? '') == 'UK' ? 'selected' : '' }}>Royaume-Uni</option>
                                 </select>
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-indigo-400">
                                     <i class="ph-caret-down"></i>
                                 </div>
                             </div>
+                            @error('country')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                         
                         <div>
                             <label for="city" class="block text-gray-400 text-sm mb-2">Ville</label>
                             <div class="relative">
-                                <input type="text" id="city" name="city" placeholder="Paris" 
+                                <input type="text" id="city" name="city" value="{{ $user->city ?? '' }}" placeholder="Paris" 
                                        class="w-full bg-gray-700/50 border border-gray-600 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-indigo-400">
                                     <i class="ph-buildings"></i>
                                 </div>
                             </div>
+                            @error('city')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="mt-6">
+                        <button type="submit" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-white hover:from-blue-500 hover:to-indigo-500 transition-all flex items-center shadow-lg shadow-blue-500/20">
+                            <i class="ph-floppy-disk text-lg mr-1.5"></i>
+                            Enregistrer les coordonnées
+                        </button>
+                    </div>
+                </form>
             </div>
             
             <!-- Colonne 3: Préférences et confidentialité -->
@@ -376,44 +426,49 @@
                 </div>
                 
                 <!-- Notifications -->
-                <div class="bg-gray-800/40 backdrop-blur-sm p-5 rounded-2xl border border-gray-700">
-                    <h3 class="text-lg font-medium text-white mb-5">Notifications</h3>
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-300">Rapports hebdomadaires</p>
-                                <p class="text-gray-500 text-xs">Recevez un résumé par email</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                            </label>
+                <form action="{{ route('profile.update.preferences') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-300">Rapports hebdomadaires</p>
+                            <p class="text-gray-500 text-xs">Recevez un résumé par email</p>
                         </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-300">Objectifs atteints</p>
-                                <p class="text-gray-500 text-xs">Notifications en temps réel</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                            </label>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-300">Actualités produit</p>
-                                <p class="text-gray-500 text-xs">Nouvelles fonctionnalités</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                            </label>
-                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="weekly_report" class="sr-only peer" 
+                                   {{ isset($user->preferences['notifications']['weekly_report']) && $user->preferences['notifications']['weekly_report'] ? 'checked' : '' }}>
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
                     </div>
-                </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-300">Objectifs atteints</p>
+                            <p class="text-gray-500 text-xs">Notifications en temps réel</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="goal_achieved" class="sr-only peer"
+                                   {{ isset($user->preferences['notifications']['goal_achieved']) && $user->preferences['notifications']['goal_achieved'] ? 'checked' : '' }}>
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-300">Actualités produit</p>
+                            <p class="text-gray-500 text-xs">Nouvelles fonctionnalités</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="product_news" class="sr-only peer"
+                                   {{ isset($user->preferences['notifications']['product_news']) && $user->preferences['notifications']['product_news'] ? 'checked' : '' }}>
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="w-full mt-4 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl text-white hover:from-purple-500 hover:to-indigo-500 transition-all flex items-center justify-center shadow-lg shadow-purple-500/20">
+                        <i class="ph-floppy-disk text-lg mr-1.5"></i>
+                        Enregistrer les préférences
+                    </button>
+                </form>
                 
                 
             </div>

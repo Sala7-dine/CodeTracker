@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController as ControllersDashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,14 @@ Route::middleware(['auth'])->group(function() {
     Route::get('/dashboard/projects', [ControllersDashboardController::class, 'projects'])->name('user.dashboard.projects');
     Route::get('/dashboard/project/{id}', [ControllersDashboardController::class, 'project'])->name('user.dashboard.project');
     Route::get('/dashboard/profile', [UserController::class, 'profile'])->name('profile');
+
+    // Routes pour le profil
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/update-image', [ProfileController::class, 'updateProfileImage'])->name('profile.update.image');
+    Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update.password');
+    Route::post('/profile/update-preferences', [ProfileController::class, 'updatePreferences'])->name('profile.update.preferences');
+    Route::post('/profile/delete', [ProfileController::class, 'deleteAccount'])->name('profile.delete');
 });
 
 

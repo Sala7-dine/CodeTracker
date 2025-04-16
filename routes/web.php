@@ -40,8 +40,6 @@ Route::middleware(['auth'])->group(function() {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/update-image', [ProfileController::class, 'updateProfileImage'])->name('profile.update.image');
-    Route::post('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update.password');
-    Route::post('/profile/update-preferences', [ProfileController::class, 'updatePreferences'])->name('profile.update.preferences');
     Route::post('/profile/delete', [ProfileController::class, 'deleteAccount'])->name('profile.delete');
 });
 

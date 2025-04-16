@@ -21,13 +21,14 @@ class ProfileController extends Controller
     }
 
     /**
-     * Met à jour les informations du profil
+     * Met à jour toutes les informations du profil
      */
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
         
-        $validated = $request->validate([
+        // Règles de validation de base
+        $rules = [
             'firstname' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',
             'email' => [
@@ -48,9 +49,17 @@ class ProfileController extends Controller
             'website' => 'nullable|url|max:255',
             'country' => 'nullable|string|max:100',
             'city' => 'nullable|string|max:100',
-        ]);
+        ];
         
-        // Mise à jour manuelle des champs
+        // Ajouter les règles pour le mot de passe si fourni
+        if ($request->filled('current_password')) {
+            $rules['current_password'] = 'required|current_password';
+            $rules['new_password'] = 'required|string|min:8|confirmed';
+        }
+        
+        $validated = $request->validate($rules);
+        
+        // 1. Mise à jour des informations personnelles
         $user->firstname = $validated['firstname'];
         $user->lastname = $validated['lastname'];
         $user->email = $validated['email'];
@@ -65,6 +74,27 @@ class ProfileController extends Controller
         $user->country = $validated['country'] ?? null;
         $user->city = $validated['city'] ?? null;
         
+        // 2. Mise à jour du mot de passe si fourni
+        if ($request->filled('current_password') && isset($validated['new_password'])) {
+            $user->password = Hash::make($validated['new_password']);
+        }
+        
+        // 3. Mise à jour des préférences
+        $preferences = $user->preferences ?? [];
+        $notifications = $preferences['notifications'] ?? [];
+        
+        $notifications['weekly_report'] = $request->has('weekly_report');
+        $notifications['goal_achieved'] = $request->has('goal_achieved');
+        $notifications['product_news'] = $request->has('product_news');
+        
+        $preferences['notifications'] = $notifications;
+        $preferences['theme'] = $request->has('dark_mode') ? 'dark' : 'light';
+        $preferences['accent_color'] = $request->accent_color ?? 'indigo';
+        $preferences['font_size'] = $request->font_size ?? 'medium';
+        
+        $user->preferences = $preferences;
+        
+        // Enregistrer les modifications
         $user->save();
         
         return redirect()->route('profile')->with('success', 'Profil mis à jour avec succès!');
@@ -95,46 +125,26 @@ class ProfileController extends Controller
         
         return redirect()->route('profile')->with('success', 'Photo de profil mise à jour avec succès!');
     }
-
+    
     /**
-     * Met à jour le mot de passe
+     * Supprime le compte utilisateur
      */
-    public function updatePassword(Request $request)
-    {
-        $validated = $request->validate([
-            'current_password' => 'required|current_password',
-            'new_password' => 'required|string|min:8|confirmed',
-        ]);
-        
-        $user = Auth::user();
-        $user->password = Hash::make($validated['new_password']);
-        $user->save();
-        
-        return redirect()->route('profile')->with('success', 'Mot de passe mis à jour avec succès!');
-    }
-
-    /**
-     * Met à jour les préférences utilisateur
-     */
-    public function updatePreferences(Request $request)
+    public function deleteAccount(Request $request)
     {
         $user = Auth::user();
         
-        $preferences = $user->preferences ?? [];
-        $notifications = $preferences['notifications'] ?? [];
+        // Supprimer l'image de profil
+        if ($user->profile_image && Storage::disk('public')->exists($user->profile_image)) {
+            Storage::disk('public')->delete($user->profile_image);
+        }
         
-        $notifications['weekly_report'] = $request->has('weekly_report');
-        $notifications['goal_achieved'] = $request->has('goal_achieved');
-        $notifications['product_news'] = $request->has('product_news');
+        // Supprimer l'utilisateur
+        $user->delete();
         
-        $preferences['notifications'] = $notifications;
-        $preferences['theme'] = $request->theme ?? 'dark';
-        $preferences['accent_color'] = $request->accent_color ?? 'indigo';
-        $preferences['font_size'] = $request->font_size ?? 'medium';
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
         
-        $user->preferences = $preferences;
-        $user->save();
-        
-        return redirect()->route('profile')->with('success', 'Préférences mises à jour avec succès!');
+        return redirect()->route('login')->with('info', 'Votre compte a été supprimé définitivement.');
     }
 }

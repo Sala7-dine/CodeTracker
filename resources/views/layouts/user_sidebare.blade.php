@@ -1,4 +1,4 @@
-<aside class="fixed left-0 top-0 h-screen w-20 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-8 space-y-8">
+<aside class="fixed left-0 top-0 h-screen w-20 bg-gray-800/30 border-r border-gray-700 flex flex-col items-center py-8 space-y-8">
     <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center">
         <i class="ph-code text-2xl text-white"></i>
     </div>

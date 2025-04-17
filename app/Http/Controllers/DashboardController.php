@@ -6,17 +6,20 @@ use App\Models\Activity;
 use App\Models\Project;
 use App\Models\Language;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
-
     public function index()
     {
         $projects = Project::with('languages')->get();
         
         $number_of_projects = Project::with('languages')->count();
         
-        // Récupérer l'activité la plus récente pour déterminer le fichier et projet actuels
+        // Récupérer le projet le plus récemment actif
+        $activeProject = Project::orderBy('created_at', 'desc')->first();
+        
+        // Récupérer l'activité la plus récente
         $latestActivity = Activity::with('project')
             ->orderBy('created_at', 'desc')
             ->first();
@@ -37,9 +40,27 @@ class DashboardController extends Controller
                     ['name' => 'ESLint', 'active' => false],
                 ]
             ],
-            'currentProject' => null // Pour stocker les infos du projet actuel
+            'currentProject' => null, // Pour stocker les infos du projet actuel
+            'debugging_info' => [
+                'latest_activity_id' => $latestActivity ? $latestActivity->id : null,
+                'latest_project_id' => $activeProject ? $activeProject->id : null,
+                'total_activities' => Activity::count(),
+                'has_stats' => $latestActivity && !empty($latestActivity->stats) ? 'oui' : 'non'
+            ]
         ];
 
+        if ($latestActivity) {
+            // Débogage pour voir les données stats
+            Log::debug('Stats de la dernière activité', [
+                'activity_id' => $latestActivity->id,
+                'stats' => $latestActivity->stats,
+                'raw_stats_type' => gettype($latestActivity->stats),
+                'file_name' => $latestActivity->file_name,
+                'file_path' => $latestActivity->file_path,
+                'language' => $latestActivity->language,
+                'duration' => $latestActivity->duration
+            ]);
+        }
         
         if ($latestActivity && $latestActivity->project) {
             $activeProject = $latestActivity->project;
@@ -63,12 +84,12 @@ class DashboardController extends Controller
                 'formattedTime' => Language::formatTime($activeProject->getTotalTime())
             ];
             
-            // Informations sur le fichier actuel
+            // Informations sur le fichier actuel avec vérifications supplémentaires
             $globalStats['currentFile'] = [
-                'name' => $latestActivity->file_name,
-                'path' => $latestActivity->file_path,
+                'name' => $latestActivity->file_name ?? basename($latestActivity->file_path ?? 'Inconnu'),
+                'path' => $latestActivity->file_path ?? 'Chemin inconnu',
                 'language' => $latestActivity->language ?? 'inconnu',
-                'lines' => $latestActivity->lines,
+                'lines' => $latestActivity->lines ?? 0,
                 'timeSpent' => $timeSpent,
                 'formattedTime' => Language::formatTime($latestActivity->duration * 1000),
                 'lastActive' => $latestActivity->created_at->diffForHumans(),

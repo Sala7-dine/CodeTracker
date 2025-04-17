@@ -10,17 +10,34 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class ActivityController extends Controller
 {
+    // Seuil d'inactivité en secondes (2 minutes par défaut)
+    private $inactivityThreshold;
+    
+    public function __construct()
+    {
+        // Charger le seuil depuis la configuration
+        $this->inactivityThreshold = config('codetrack.inactivity_threshold', 120);
+    }
+    
     public function track(Request $request)
     {
-        // Valider les données reçues
+        // Log pour débogage - toutes les données reçues
+        Log::debug('Données reçues dans track', [
+            'all_data' => $request->all(),
+            'headers' => $request->header(),
+        ]);
+        
+        // Valider les données reçues, y compris le flag d'activité
         $validator = Validator::make($request->all(), [
             'file' => 'required|string',
             'project' => 'required|string',
             'duration' => 'required|integer|min:1',
             'timestamp' => 'required|integer',
+            'isActive' => 'boolean',
         ]);
         
         if ($validator->fails()) {
@@ -29,6 +46,24 @@ class ActivityController extends Controller
                 'error' => 'Données incomplètes ou invalides',
                 'details' => $validator->errors()
             ], 400);
+        }
+        
+        // Ajout de debug supplémentaire pour le flag isActive
+        $isActive = $request->has('isActive') ? (bool)$request->isActive : true;
+        Log::debug('État d\'activité détecté', ['isActive' => $isActive]);
+        
+        // Ne pas traiter les données si l'utilisateur est inactif
+        if (!$isActive) {
+            Log::info('Requête reçue mais ignorée car utilisateur inactif', [
+                'file' => basename($request->file),
+                'project' => $request->project
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Requête ignorée - utilisateur inactif',
+                'status' => 'inactive'
+            ]);
         }
         
         try {
@@ -84,17 +119,50 @@ class ActivityController extends Controller
             // Extraire le nom du fichier depuis le chemin
             $fileName = basename($request->file);
             
-            // Créer l'activité
+            // Récupérer la dernière activité pour ce même fichier
+            $lastActivity = Activity::where('project_id', $project->id)
+                ->where('file_path', $request->file)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            // Créer l'activité avec les données de base
             $activity = new Activity([
                 'file_path' => $request->file,
                 'file_name' => $fileName,
                 'duration' => $request->duration,
-                'activity_time' => now(), // Ou utiliser le timestamp du client converti
+                'activity_time' => Carbon::createFromTimestamp($request->timestamp),
+                'last_activity_time' => now(),
+                'activity_status' => 'active',
+                'project_id' => $project->id, // Définir explicitement l'ID du projet
             ]);
+
+            // Extraire le type de fichier pour déterminer le langage
+            $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+            $language = $extension ? strtolower($extension) : null;
+            $activity->language = $language; // Définir un langage par défaut
             
-            // Traiter les statistiques complètes si elles sont présentes
-            if ($request->has('stats')) {
+            // Si la dernière activité existe et est trop ancienne, marquer une interruption
+            if ($lastActivity) {
+                $timeSinceLastActivity = now()->diffInSeconds($lastActivity->created_at);
+                
+                // Si plus de temps s'est écoulé que le seuil d'inactivité + la durée rapportée
+                if ($timeSinceLastActivity > ($this->inactivityThreshold + $request->duration)) {
+                    $activity->activity_status = 'resumed';
+                    $activity->inactive_gap = $timeSinceLastActivity - $request->duration;
+                    
+                    Log::info('Activité reprise après inactivité', [
+                        'project' => $project->name,
+                        'file' => $fileName,
+                        'inactive_gap' => $activity->inactive_gap
+                    ]);
+                }
+            }
+            
+            // Si les statistiques sont présentes, les lire correctement
+            if ($request->has('stats') && is_array($request->stats)) {
                 $stats = $request->stats;
+                Log::debug('Statistiques reçues', ['stats' => $stats]);
+                
                 $activity->stats = $stats;
                 
                 // Mettre à jour les informations d'environnement du projet
@@ -124,6 +192,48 @@ class ActivityController extends Controller
                         );
                     }
                 }
+            } else if ($request->has('stats') && is_string($request->stats)) {
+                // Si stats est une chaîne JSON, essayer de la convertir
+                try {
+                    $stats = json_decode($request->stats, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        Log::debug('Statistiques JSON décodées', ['stats' => $stats]);
+                        $activity->stats = $stats;
+                        
+                        // Traiter les statistiques comme précédemment
+                        if (isset($stats['environment'])) {
+                            $project->environment_info = $stats['environment'];
+                            $project->save();
+                        }
+                        
+                        // Mettre à jour les informations du fichier courant
+                        if (isset($stats['currentFile'])) {
+                            $currentFile = $stats['currentFile'];
+                            $activity->language = $currentFile['language'] ?? null;
+                            $activity->lines = $currentFile['lineCount'] ?? 0;
+                        }
+                        
+                        // Mettre à jour les statistiques par langage
+                        if (isset($stats['languages']) && is_array($stats['languages'])) {
+                            foreach ($stats['languages'] as $langName => $langData) {
+                                Language::updateOrCreate(
+                                    ['project_id' => $project->id, 'name' => $langName],
+                                    [
+                                        'files' => $langData['files'] ?? 0,
+                                        'lines' => $langData['lines'] ?? 0,
+                                        'time_ms' => $langData['time'] ?? 0,
+                                    ]
+                                );
+                            }
+                        }
+                    } else {
+                        Log::error('Erreur de décodage JSON', ['error' => json_last_error_msg()]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Exception lors du décodage JSON', ['error' => $e->getMessage()]);
+                }
+            } else {
+                Log::debug('Aucune statistique reçue dans la requête');
             }
             
             // Associer l'activité au projet et sauvegarder
@@ -133,12 +243,18 @@ class ActivityController extends Controller
             Log::info('Activité enregistrée', [
                 'project' => $request->project,
                 'file' => $request->file,
-                'duration' => $request->duration
+                'duration' => $request->duration,
+                'status' => $activity->activity_status
             ]);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Activité enregistrée avec succès'
+                'message' => 'Activité enregistrée avec succès',
+                'data' => [
+                    'status' => $activity->activity_status,
+                    'inactivity_threshold' => $this->inactivityThreshold,
+                    'inactive_gap' => $activity->inactive_gap ?? 0
+                ]
             ]);
             
         } catch (\Exception $e) {
@@ -155,11 +271,31 @@ class ActivityController extends Controller
         }
     }
     
-    public function getActivities()
+    public function getActivities(Request $request)
     {
-        $activities = Activity::with('project')
-            ->orderBy('created_at', 'desc')
-            ->take(50)
+        $query = Activity::with('project');
+        
+        // Filtrer par projet si spécifié
+        if ($request->has('project')) {
+            $project = Project::where('name', $request->project)->first();
+            if ($project) {
+                $query->where('project_id', $project->id);
+            }
+        }
+        
+        // Filtrer par statut d'activité si demandé
+        if ($request->has('status')) {
+            $query->where('activity_status', $request->status);
+        }
+        
+        // Filtrer par date si spécifié
+        if ($request->has('date')) {
+            $date = Carbon::parse($request->date);
+            $query->whereDate('created_at', $date);
+        }
+        
+        $activities = $query->orderBy('created_at', 'desc')
+            ->take($request->limit ?? 50)
             ->get();
         
         return response()->json($activities);
@@ -180,6 +316,19 @@ class ActivityController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
         
+        // Calculer les statistiques de présence/absence
+        $activitiesQuery = $project->activities();
+        $totalTime = $activitiesQuery->sum('duration');
+        $inactiveGaps = $activitiesQuery->where('inactive_gap', '>', 0)->sum('inactive_gap');
+        $activityCount = $activitiesQuery->count();
+        $resumedActivities = $activitiesQuery->where('activity_status', 'resumed')->count();
+        
+        // Calculer le pourcentage d'utilisation active (temps actif / (temps actif + pauses))
+        $totalElapsedTime = $totalTime + $inactiveGaps;
+        $activePercentage = $totalElapsedTime > 0 
+            ? round(($totalTime / $totalElapsedTime) * 100) 
+            : 100;
+        
         $stats = [
             'project' => $project->name,
             'environment' => $project->environment_info,
@@ -189,12 +338,22 @@ class ActivityController extends Controller
                 'time' => $project->getTotalTime(),
                 'formatted_time' => Language::formatTime($project->getTotalTime())
             ],
+            'activity' => [
+                'total_sessions' => $activityCount,
+                'resumed_sessions' => $resumedActivities,
+                'active_percentage' => $activePercentage,
+                'total_active_time' => $totalTime,
+                'total_inactive_gaps' => $inactiveGaps,
+                'formatted_active_time' => Language::formatTime($totalTime * 1000),
+                'formatted_inactive_gaps' => Language::formatTime($inactiveGaps * 1000)
+            ],
             'lastActivity' => $lastActivity ? [
                 'file' => $lastActivity->file_name,
                 'path' => $lastActivity->file_path,
                 'language' => $lastActivity->language,
                 'lines' => $lastActivity->lines,
-                'time' => $lastActivity->created_at->format('Y-m-d H:i:s')
+                'time' => $lastActivity->created_at->format('Y-m-d H:i:s'),
+                'status' => $lastActivity->activity_status
             ] : null,
             'languages' => []
         ];
@@ -209,5 +368,43 @@ class ActivityController extends Controller
         }
         
         return response()->json($stats);
+    }
+    
+    /**
+     * Obtenir les statistiques d'activité par jour pour un projet
+     */
+    public function getActivityTimeline($projectName)
+    {
+        $project = Project::where('name', $projectName)->first();
+        
+        if (!$project) {
+            return response()->json(['error' => 'Projet non trouvé'], 404);
+        }
+        
+        // Récupérer les activités par jour
+        $activities = $project->activities()
+            ->selectRaw('DATE(created_at) as date, SUM(duration) as total_duration, 
+                        SUM(inactive_gap) as total_inactive, 
+                        COUNT(*) as session_count,
+                        SUM(CASE WHEN activity_status = "resumed" THEN 1 ELSE 0 END) as resumed_count')
+            ->groupBy('date')
+            ->orderBy('date', 'desc')
+            ->get();
+        
+        $timeline = [];
+        
+        foreach ($activities as $day) {
+            $timeline[] = [
+                'date' => $day->date,
+                'active_time' => $day->total_duration,
+                'inactive_time' => $day->total_inactive,
+                'session_count' => $day->session_count,
+                'resumed_count' => $day->resumed_count,
+                'formatted_active_time' => Language::formatTime($day->total_duration * 1000),
+                'formatted_inactive_time' => Language::formatTime($day->total_inactive * 1000),
+            ];
+        }
+        
+        return response()->json($timeline);
     }
 }

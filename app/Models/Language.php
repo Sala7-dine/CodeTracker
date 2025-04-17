@@ -27,6 +27,11 @@ class Language extends Model
         $minutes = floor($seconds / 60);
         $hours = floor($minutes / 60);
         
-        return sprintf('%dh %dm %ds', $hours, $minutes % 60, $seconds % 60);
+        // Extraire les minutes et secondes restantes après calcul des heures
+        $remainingMinutes = $minutes % 60;
+        $remainingSeconds = $seconds % 60;
+        
+        // Formater avec padding pour avoir toujours deux chiffres
+        return sprintf('%dh %02dm %02ds', $hours, $remainingMinutes, $remainingSeconds);
     }
 }

@@ -37,7 +37,7 @@ class DashboardController extends Controller
                 'extensions' => [
                     ['name' => 'GitLens', 'active' => true],
                     ['name' => 'Prettier', 'active' => true],
-                    ['name' => 'ESLint', 'active' => false],
+                    ['name' => 'ESLint', 'active' => true],
                 ]
             ],
             'currentProject' => null, // Pour stocker les infos du projet actuel

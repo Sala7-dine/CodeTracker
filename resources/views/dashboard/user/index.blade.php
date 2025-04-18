@@ -417,8 +417,6 @@
         </div>
         @endif
 
-        
-
         <!-- Main Chart -->
         <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700 mb-8">
             <div class="flex items-center justify-between mb-6">
@@ -440,6 +438,319 @@
                 </div>
             </div>
         </div>
+
+        <!-- Polar Area Chart - Distribution par langage de programmation -->
+        <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700 mb-8 relative overflow-hidden">
+            <!-- Éléments décoratifs en arrière-plan -->
+            <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-500/5 rounded-full filter blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+            <div class="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full filter blur-3xl -ml-32 -mb-32 pointer-events-none"></div>
+            
+            <!-- En-tête avec style amélioré -->
+            <div class="flex items-center justify-between mb-6 relative z-10">
+                <h2 class="text-xl font-semibold text-white flex items-center">
+                    <span class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-600/40 to-purple-600/40 flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/10">
+                        <i class="ph-code text-indigo-400"></i>
+                    </span>
+                    Distribution du temps par langage
+                </h2>
+            </div>
+            
+            <!-- Conteneur du graphique avec style amélioré -->
+            <div class="relative h-[400px] lg:h-[500px] bg-gray-800/30 rounded-xl border border-gray-700 shadow-lg overflow-hidden">
+                <!-- Canvas pour Chart.js -->
+                <canvas id="polarAreaChart" class="w-full h-full p-4"></canvas>
+                
+                <!-- Message si pas de données -->
+                <div id="noChartData" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-20 bg-gray-800/80 backdrop-blur-md">
+                    <div class="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center mb-4">
+                        <i class="ph-code text-indigo-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-white mb-2">Aucune donnée disponible</h3>
+                    <p class="text-gray-400 max-w-md">Commencez à coder avec l'extension pour générer des statistiques de temps par langage.</p>
+                </div>
+            </div>
+            
+            <!-- Info supplémentaire -->
+            <div id="languageDetails" class="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Les informations détaillées seront ajoutées dynamiquement ici -->
+            </div>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Récupération des données depuis le contrôleur
+            const languageLabels = {!! json_encode(array_keys($globalStats['languages'] ?? [])) !!};
+            const languageData = {!! json_encode(array_column($globalStats['languages'] ?? [], 'time_spent')) !!};
+            const languageColors = [];
+            const languageDetails = {};
+            
+            // Définir les couleurs et collecter les détails par langage
+            @foreach($globalStats['languages'] ?? [] as $langName => $lang)
+                @php
+                    $langColor = '#6366f1'; // Indigo par défaut
+                    
+                    if (strtolower($langName) == 'javascript' || strtolower($langName) == 'js') {
+                        $langColor = '#fbbf24'; // yellow-500
+                    } elseif (strtolower($langName) == 'php') {
+                        $langColor = '#a855f7'; // purple-500
+                    } elseif (strtolower($langName) == 'css') {
+                        $langColor = '#3b82f6'; // blue-500
+                    } elseif (strtolower($langName) == 'html') {
+                        $langColor = '#f97316'; // orange-500
+                    } elseif (strtolower($langName) == 'python' || strtolower($langName) == 'py') {
+                        $langColor = '#22c55e'; // green-500
+                    } elseif (strtolower($langName) == 'typescript' || strtolower($langName) == 'ts') {
+                        $langColor = '#ec4899'; // pink-500
+                    } elseif (strtolower($langName) == 'json') {
+                        $langColor = '#0ea5e9'; // sky-500
+                    }
+                @endphp
+                
+                languageColors.push('{{ $langColor }}');
+                
+                languageDetails['{{ $langName }}'] = {
+                    name: '{{ $langName }}',
+                    color: '{{ $langColor }}',
+                    files: {{ $lang['files'] ?? 0 }},
+                    lines: {{ $lang['lines'] ?? 0 }},
+                    formattedTime: '{{ $lang['formattedTime'] ?? "0m" }}'
+                };
+            @endforeach
+            
+            // Vérifier si nous avons des données
+            if (languageLabels.length === 0 || languageData.length === 0) {
+                document.getElementById('noChartData').classList.remove('hidden');
+                return;
+            }
+            
+            // Créer le Polar Area Chart
+            const ctx = document.getElementById('polarAreaChart').getContext('2d');
+            const polarAreaChart = new Chart(ctx, {
+                type: 'polarArea',
+                data: {
+                    labels: languageLabels,
+                    datasets: [{
+                        data: languageData,
+                        backgroundColor: languageColors.length > 0 ? languageColors : [
+                            '#fbbf24',  // yellow-500  - JavaScript
+                            '#a855f7',  // purple-500 - PHP
+                            '#f97316',  // orange-500 - HTML
+                            '#3b82f6',  // blue-500   - CSS
+                            '#22c55e',  // green-500  - Python
+                            '#ec4899',  // pink-500   - TypeScript
+                            '#0ea5e9',  // sky-500    - JSON
+                            '#6366f1',  // indigo-500 - Autres
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#1f2937',
+                        hoverBorderColor: 'white',
+                        hoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#fff',
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                },
+                                // Personnaliser les labels pour inclure le temps formaté
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const formattedTime = languageDetails[label]?.formattedTime || '';
+                                            
+                                            return {
+                                                text: `${label} (${formattedTime})`,
+                                                fillStyle: chart.data.datasets[0].backgroundColor[i],
+                                                strokeStyle: chart.data.datasets[0].borderColor,
+                                                lineWidth: chart.data.datasets[0].borderWidth,
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Répartition du temps par langage',
+                            color: '#ffffff',
+                            font: {
+                                size: 16,
+                                weight: 'normal'
+                            },
+                            padding: {
+                                top: 10,
+                                bottom: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    const label = context.label;
+                                    const value = languageDetails[label]?.formattedTime || '';
+                                    const lines = languageDetails[label]?.lines || 0;
+                                    const files = languageDetails[label]?.files || 0;
+                                    return [
+                                        `Temps total: ${value}`,
+                                        `Fichiers: ${files}`,
+                                        `Lignes: ${lines}`
+                                    ];
+                                }
+                            },
+                            titleFont: {
+                                weight: 'bold'
+                            },
+                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                            borderColor: 'rgba(99, 102, 241, 0.6)',
+                            borderWidth: 1,
+                            padding: 12,
+                            boxPadding: 6
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            ticks: {
+                                display: false
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            angleLines: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            pointLabels: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Générer les détails des langages
+            const languageDetailsContainer = document.getElementById('languageDetails');
+            let detailsHTML = '';
+            
+            // Trier les langages par temps passé (du plus grand au plus petit)
+            const sortedLanguages = Object.values(languageDetails).sort((a, b) => {
+                const timeA = parseDuration(a.formattedTime);
+                const timeB = parseDuration(b.formattedTime);
+                return timeB - timeA;
+            });
+            
+            // Top 4 langages max
+            const topLanguages = sortedLanguages.slice(0, 4);
+            
+            // Créer les cartes de détails pour les langages
+            topLanguages.forEach(lang => {
+                detailsHTML += `
+                <div class="bg-gray-800/30 p-4 rounded-xl border border-gray-700">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-8 h-8 rounded-lg" style="background-color: ${lang.color}40">
+                            <div class="w-full h-full flex items-center justify-center">
+                                <i class="ph-code text-lg" style="color: ${lang.color}"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-medium">${lang.name}</h3>
+                            <p class="text-xs text-gray-400">${lang.formattedTime}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400">Fichiers</span>
+                            <span class="text-white">${lang.files}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400">Lignes de code</span>
+                            <span class="text-white">${lang.lines}</span>
+                        </div>
+                        <div class="w-full h-1.5 mt-2 bg-gray-700 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full" style="width: 75%; background-color: ${lang.color}"></div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            
+            // Si nous n'avons pas de données détaillées
+            if (topLanguages.length === 0) {
+                detailsHTML = `
+                <div class="col-span-full bg-gray-800/30 p-5 rounded-xl border border-gray-700 text-center">
+                    <i class="ph-code text-indigo-400 text-3xl mb-2"></i>
+                    <h4 class="text-white mb-1">Aucun détail disponible</h4>
+                    <p class="text-gray-400 text-sm">Les statistiques détaillées apparaîtront ici une fois que vous aurez commencé à coder.</p>
+                </div>
+                `;
+            }
+            
+            languageDetailsContainer.innerHTML = detailsHTML;
+            
+            // Fonction pour analyser les durées formatées (comme "2h 30m" ou "45m")
+            function parseDuration(formattedTime) {
+                if (!formattedTime) return 0;
+                
+                let totalMinutes = 0;
+                
+                // Extraire les heures
+                const hourMatch = formattedTime.match(/(\d+)h/);
+                if (hourMatch) {
+                    totalMinutes += parseInt(hourMatch[1]) * 60;
+                }
+                
+                // Extraire les minutes
+                const minuteMatch = formattedTime.match(/(\d+)m/);
+                if (minuteMatch) {
+                    totalMinutes += parseInt(minuteMatch[1]);
+                }
+                
+                return totalMinutes;
+            }
+            
+            // Ajouter le clic sur les segments du graphique pour mettre en évidence
+            document.getElementById('polarAreaChart').onclick = function(evt) {
+                const activePoints = polarAreaChart.getElementsAtEventForMode(
+                    evt, 
+                    'nearest', 
+                    { intersect: true }, 
+                    true
+                );
+                
+                if (activePoints.length) {
+                    const firstPoint = activePoints[0];
+                    const label = polarAreaChart.data.labels[firstPoint.index];
+                    
+                    // Vous pourriez ajouter ici un comportement pour mettre en évidence
+                    // la section correspondante dans les détails
+                    console.log("Langage sélectionné:", label);
+                }
+            };
+        });
+        </script>
 
         <!-- Projects Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

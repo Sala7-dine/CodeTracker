@@ -11,8 +11,9 @@ use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
-    public function index()
-    {
+    public function index(){
+
+
         $projects = Project::with('languages')->get();
         
         $number_of_projects = Project::with('languages')->count();
@@ -147,32 +148,7 @@ class DashboardController extends Controller
         return view('dashboard.user.index', compact('number_of_projects', 'projects', 'globalStats'));
     }
     
-    public function project($id)
-    {
-        $project = Project::with('languages', 'activities')->findOrFail($id);
-     
-        $activities = $project->activities()
-            ->orderBy('created_at', 'desc')
-            ->take(50)
-            ->get();
-        
-        // Récupérer le fichier actuel (le plus récemment modifié) pour ce projet
-        $currentFile = $project->activities()
-            ->orderBy('created_at', 'desc')
-            ->first();
-            
-        // Formater le temps total pour le projet
-        $formattedTime = Language::formatTime($project->getTotalTime());
-
-        return view('dashboard.user.project', compact('project', 'activities', 'currentFile', 'formattedTime'));
-    }
-
-    public function projects()
-    {
-        $projects = Project::with('languages')->get();
-        
-        return view('dashboard.user.projects', compact('projects'));
-    }
+    
 
     /**
      * Récupérer les données d'activité journalière pour la vue quotidienne (projet actuel uniquement)

@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController as ControllersDashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjetController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -32,8 +33,8 @@ Route::middleware('guest')->controller(AuthController::class)->group( function()
 
 Route::middleware(['auth'])->group(function() {
     Route::get('/user/dashboard', [ControllersDashboardController::class, 'index'])->name('user.dashboard');
-    Route::get('/dashboard/projects', [ControllersDashboardController::class, 'projects'])->name('user.dashboard.projects');
-    Route::get('/dashboard/project/{id}', [ControllersDashboardController::class, 'project'])->name('user.dashboard.project');
+    Route::get('/dashboard/projects', [ProjetController::class, 'projects'])->name('user.dashboard.projects');
+    Route::get('/dashboard/project/{id}', [ProjetController::class, 'project'])->name('user.dashboard.project');
     Route::get('/dashboard/profile', [UserController::class, 'profile'])->name('profile');
 
     // Routes pour le profil

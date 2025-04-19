@@ -368,22 +368,37 @@
         <!-- Main Chart -->
         <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700 mb-8">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-semibold text-white">Activité de codage</h2>
+                <h2 class="text-xl font-semibold text-white flex items-center">
+                    <span class="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center mr-3">
+                        <i class="ph-chart-line text-indigo-400"></i>
+                    </span>
+                    @if(isset($globalStats['currentProject']))
+                        Activité de codage - {{ $globalStats['currentProject']['name'] }}
+                    @else
+                        Activité de codage
+                    @endif
+                </h2>
                 <div class="flex space-x-2">
-                    <button class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 text-sm hover:bg-gray-600">Jour</button>
-                    <button class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm">Semaine</button>
-                    <button class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 text-sm hover:bg-gray-600">Mois</button>
+                    <button class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 text-sm hover:bg-gray-600 chart-view-btn" data-view="daily">Jour</button>
+                    <button class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm chart-view-btn" data-view="weekly">Semaine</button>
+                    <button class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 text-sm hover:bg-gray-600 chart-view-btn" data-view="monthly">Mois</button>
                 </div>
             </div>
             <div class="grid grid-cols-1 gap-6">
                 <!-- Line Chart -->
-                <div>
-                    <canvas id="activityChart" class="w-full h-[400px]"></canvas>
+                <div class="relative h-[400px]">
+                    @if(isset($globalStats['currentProject']))
+                        <canvas id="activityChart" class="w-full h-full"></canvas>
+                    @else
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-gray-800/50 backdrop-blur-sm rounded-xl">
+                            <div class="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center mb-4">
+                                <i class="ph-chart-line text-indigo-400 text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-medium text-white mb-2">Aucun projet actif</h3>
+                            <p class="text-gray-400 max-w-md">Ouvrez un projet dans votre éditeur pour voir les statistiques d'activité.</p>
+                        </div>
+                    @endif
                 </div>
-                <!-- Doughnut Chart -->
-                {{-- <div>
-                    <canvas id="languagesChart" class="w-full h-[200px]"></canvas>
-                </div> --}}
             </div>
         </div>
 
@@ -424,13 +439,12 @@
             </div>
         </div>
 
-       
-
+    
         <!-- Section des projets récents -->
         <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700 ">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-xl font-semibold text-white">Projets récents</h2>
-                <a href="{{ route('user.dashboard.projects') }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+                <a href="#" onclick="openProjectModal()" class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
                     Voir tous les projets
                     <i class="ph-arrow-right ml-1"></i>
                 </a>
@@ -790,112 +804,153 @@
                 }
             };
         });
-        </script>
+    </script>
 
-    <!-- Ajout du script Chart.js à la fin du body -->
+    <!-- Ajout du script Chart.js à la fin du body avec les données du contrôleur -->
     <script>
         // Configuration du thème global de Chart.js
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.borderColor = '#334155';
 
+        // Récupération des données depuis le contrôleur
+        const chartData = {
+            daily: {
+                labels: {!! json_encode($globalStats['chartData']['daily']['labels'] ?? []) !!},
+                data: {!! json_encode($globalStats['chartData']['daily']['data'] ?? []) !!},
+                colors: {!! json_encode($globalStats['chartData']['daily']['colors'] ?? []) !!},
+                title: "{{ $globalStats['chartData']['daily']['title'] ?? 'Activité quotidienne' }}"
+            },
+            weekly: {
+                labels: {!! json_encode($globalStats['chartData']['weekly']['labels'] ?? []) !!},
+                data: {!! json_encode($globalStats['chartData']['weekly']['data'] ?? []) !!},
+                colors: {!! json_encode($globalStats['chartData']['weekly']['colors'] ?? []) !!},
+                title: "{{ $globalStats['chartData']['weekly']['title'] ?? 'Activité hebdomadaire' }}"
+            },
+            monthly: {
+                labels: {!! json_encode($globalStats['chartData']['monthly']['labels'] ?? []) !!},
+                data: {!! json_encode($globalStats['chartData']['monthly']['data'] ?? []) !!},
+                colors: {!! json_encode($globalStats['chartData']['monthly']['colors'] ?? []) !!},
+                title: "{{ $globalStats['chartData']['monthly']['title'] ?? 'Activité mensuelle' }}"
+            }
+        };
+
         // Graphique d'activité (ligne)
         const activityCtx = document.getElementById('activityChart').getContext('2d');
-        new Chart(activityCtx, {
-            type: 'line',
-            data: {
-                labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-                datasets: [{
-                    label: 'Heures de code',
-                    data: [4.5, 6, 3.5, 7, 5.5, 4, 2],
-                    borderColor: '#818cf8',
-                    backgroundColor: '#818cf820',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    title: {
-                        display: true,
-                        text: 'Temps de codage quotidien',
-                        color: '#fff',
-                        font: {
-                            size: 16,
-                            weight: 'normal'
-                        }
-                    }
+        let currentView = 'weekly'; // Vue par défaut
+        let activityChart;
+
+        // Fonction pour initialiser le graphique
+        function initActivityChart() {
+            const currentData = chartData[currentView];
+            
+            // Vérifier si nous avons des données
+            if (!currentData.labels || !currentData.data || currentData.labels.length === 0) {
+                // Utiliser des données par défaut si aucune donnée n'est disponible
+                currentData.labels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+                currentData.data = [0, 0, 0, 0, 0, 0, 0];
+                currentData.colors = Array(7).fill('rgba(99, 102, 241, 0.2)');
+            }
+
+            activityChart = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: currentData.labels,
+                    datasets: [{
+                        label: 'Heures de code',
+                        data: currentData.data,
+                        borderColor: '#818cf8',
+                        backgroundColor: '#818cf820',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: currentData.colors || Array(currentData.data.length).fill('#818cf8'),
+                        pointBorderColor: '#ffffff',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: '#1f2937'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: currentData.title || 'Temps de codage',
+                            color: '#fff',
+                            font: {
+                                size: 16,
+                                weight: 'normal'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return value.toFixed(1) + ' heures';
+                                }
+                            },
+                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(99, 102, 241, 0.6)',
+                            borderWidth: 1,
+                            padding: 12
                         }
                     },
-                    x: {
-                        grid: {
-                            display: false
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#1f2937'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + 'h';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        // Graphique des langages (donut)
-        const languagesCtx = document.getElementById('languagesChart').getContext('2d');
-        new Chart(languagesCtx, {
-            type: 'doughnut',
-            data: {
-                labels: {!! json_encode(array_keys($globalStats['languages'] ?? [])) !!},
-                datasets: [{
-                    data: {!! json_encode(array_column($globalStats['languages'] ?? [], 'time_spent')) !!},
-                    backgroundColor: [
-                        '#fbbf24',  // JavaScript
-                        '#a855f7',  // PHP
-                        '#f97316',  // HTML
-                        '#3b82f6',  // CSS
-                        '#22c55e',   // Python
-                        '#ec4899',   // Rose
-                        '#0ea5e9',   // Bleu clair
-                        '#6366f1'    // Indigo
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            color: '#fff',
-                            usePointStyle: true,
-                            padding: 20,
-                            font: {
-                                size: 12
-                            }
-                        }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Répartition des langages',
-                        color: '#fff',
-                        font: {
-                            size: 16,
-                            weight: 'normal'
-                        }
+        // Initialiser le graphique au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            initActivityChart();
+
+            // Gérer les clics sur les boutons de vue
+            document.querySelectorAll('.chart-view-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    // Récupérer la vue sélectionnée
+                    const view = this.dataset.view;
+                    if (view === currentView) return;
+                    
+                    // Mettre à jour l'état des boutons
+                    document.querySelectorAll('.chart-view-btn').forEach(btn => {
+                        btn.classList.remove('bg-indigo-600', 'text-white');
+                        btn.classList.add('bg-gray-700', 'text-gray-300');
+                    });
+                    this.classList.remove('bg-gray-700', 'text-gray-300');
+                    this.classList.add('bg-indigo-600', 'text-white');
+                    
+                    // Mettre à jour la vue actuelle
+                    currentView = view;
+                    
+                    // Détruire et recréer le graphique
+                    if (activityChart) {
+                        activityChart.destroy();
                     }
-                },
-                cutout: '75%'
-            }
+                    initActivityChart();
+                });
+            });
         });
     </script>
-
 
 </x-app-layout>

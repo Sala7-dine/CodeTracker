@@ -4,66 +4,11 @@
 
     <!-- Main Content -->
     <main class="ml-20 p-8">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-white">Dashboard</h1>
-                <p class="text-gray-400">Bienvenue sur CodeTrack, John</p>
-            </div>
-            <div class="flex items-center space-x-4">
-                <button class="px-4 py-2 bg-gray-700 rounded-lg text-gray-300 hover:bg-gray-600 transition-all">
-                    <i class="ph-bell text-xl"></i>
-                </button>
-                <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white">JD</div>
-            </div>
-        </header>
+        
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-gray-400">Temps total</h3>
-                    <span class="w-8 h-8 rounded-lg bg-indigo-600/20 flex items-center justify-center">
-                        <i class="ph-clock text-indigo-400"></i>
-                    </span>
-                </div>
-                <p class="text-3xl font-bold text-white">{{ $globalStats['formattedTime'] }}</p>
-                <p class="text-sm text-green-400 mt-2">+2.5% vs semaine dernière</p>
-            </div>
+        @include("layouts.user_header");
 
-            <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-gray-400">Projets actifs</h3>
-                    <span class="w-8 h-8 rounded-lg bg-purple-600/20 flex items-center justify-center">
-                        <i class="ph-folders text-purple-400"></i>
-                    </span>
-                </div>
-                <p class="text-3xl font-bold text-white">{{ $number_of_projects }}</p>
-                <p class="text-sm text-purple-400 mt-2">2 nouveaux cette semaine</p>
-            </div>
-
-            <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-gray-400">Lignes de code</h3>
-                    <span class="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center">
-                        <i class="ph-code-block text-blue-400"></i>
-                    </span>
-                </div>
-                <p class="text-3xl font-bold text-white">{{ $globalStats['totalLines'] }}</p>
-                <p class="text-sm text-blue-400 mt-2">+847 aujourd'hui</p>
-            </div>
-
-            <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-gray-400">Productivité</h3>
-                    <span class="w-8 h-8 rounded-lg bg-green-600/20 flex items-center justify-center">
-                        <i class="ph-chart-bar text-green-400"></i>
-                    </span>
-                </div>
-                <p class="text-3xl font-bold text-white">85%</p>
-                <p class="text-sm text-green-400 mt-2">Objectif atteint</p>
-            </div>
-        </div>
+        @include("layouts.stats_cards");
 
         <!-- Section principale regroupée - Projet actuel, Technologies et Session -->
         @if(isset($globalStats['currentProject']))
@@ -72,10 +17,14 @@
             <div class="relative mb-8">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="text-2xl font-semibold text-white flex items-center">
-                            <i class="ph-folder-open text-indigo-400 mr-3"></i>
-                            {{ $globalStats['currentProject']['name'] }}
-                        </h2>
+
+                        <div class="flex items-end">
+                            <h2 class="text-4xl font-semibold text-white flex items-end">
+                                <i class="ph-folder-open text-indigo-400 mr-3"></i>
+                                {{ $globalStats['currentProject']['name'] }} 
+                            </h2>
+                            <p class="text-gray-400 text-md px-2 font-medium text-xl">{{ $globalStats['currentProject']['formattedTime'] }}</p>
+                        </div>
                         <p class="text-gray-400 mt-1">Session de développement active</p>
                     </div>
                     <div class="flex items-center space-x-3">
@@ -93,10 +42,114 @@
                 <div class="absolute -bottom-4 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-70 rounded-full"></div>
             </div>
 
+            <!-- Colonne centrale - Fichier actuel -->
+            <div class="mb-8">
+                @if(isset($globalStats['currentFile']))
+                <div class="bg-gray-800/30 h-full p-5 rounded-xl border border-gray-700 backdrop-blur-md relative overflow-hidden">
+                    <!-- Gradient décoratif -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full filter blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+                    <div class="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/5 rounded-full filter blur-3xl -ml-32 -mb-32 pointer-events-none"></div>
+                    
+                    <h3 class="text-lg font-medium text-white mb-4 pb-3 border-b border-gray-700 flex items-center relative">
+                        <i class="ph-code text-indigo-400 mr-2"></i>
+                        Session active
+                    </h3>
+                    
+                    <!-- Contenu du fichier actuel -->
+                    <div class="space-y-5 relative">
+                        <!-- En-tête du fichier -->
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 rounded-lg bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
+                                @php
+                                    $iconClass = 'ph-file-code';
+                                    $textColor = 'text-indigo-400';
+                                    
+                                    if (isset($globalStats['currentFile']['language'])) {
+                                        $lang = strtolower($globalStats['currentFile']['language']);
+                                        if (strpos($lang, 'javascript') !== false || strpos($lang, 'js') !== false) {
+                                            $iconClass = 'ph-file-js';
+                                            $textColor = 'text-yellow-400';
+                                        } elseif (strpos($lang, 'css') !== false) {
+                                            $iconClass = 'ph-file-css';
+                                            $textColor = 'text-blue-400';
+                                        } elseif (strpos($lang, 'html') !== false) {
+                                            $iconClass = 'ph-file-html';
+                                            $textColor = 'text-orange-400';
+                                        } elseif (strpos($lang, 'php') !== false) {
+                                            $iconClass = 'ph-file-php';
+                                            $textColor = 'text-purple-400';
+                                        } elseif (strpos($lang, 'python') !== false) {
+                                            $iconClass = 'ph-file-py';
+                                            $textColor = 'text-green-400';
+                                        }
+                                    }
+                                @endphp
+                                <i class="{{ $iconClass }} {{ $textColor }} text-2xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-medium text-white">{{ basename($globalStats['currentFile']['name']) }}</h3>
+                                <p class="text-sm text-gray-400 truncate">{{ $globalStats['currentFile']['path'] }}</p>
+                                <div class="flex items-center mt-2 flex-wrap gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs bg-gray-600/40 {{ $textColor }}">
+                                        {{ ucfirst($globalStats['currentFile']['language']) }}
+                                    </span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs bg-gray-600/40 text-gray-300">
+                                        {{ $globalStats['currentFile']['lines'] }} lignes
+                                    </span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs bg-gray-600/40 text-indigo-300">
+                                        {{ $globalStats['currentFile']['formattedTime'] }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Activité -->
+                        <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-2 text-gray-400 text-sm">
+                                    <i class="ph-activity text-green-400"></i>
+                                    <span>Dernière activité il y a {{ isset($globalStats['currentFile']['lastActive']) ? $globalStats['currentFile']['lastActive'] : 'quelques instants' }}</span>
+                                </div>
+                                <div class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-500/20 text-green-400">
+                                    En cours d'édition
+                                </div>
+                            </div>
+                            
+                            <!-- Timeline stylisée -->
+                            <div class="relative h-12 mb-3">
+                                <div class="absolute inset-0 overflow-hidden">
+                                    <div class="w-full h-full flex items-end">
+                                        <!-- Graphique d'activité simulé -->
+                                        @for($i = 0; $i < 50; $i++)
+                                            @php $height = rand(15, 100); @endphp
+                                            <div class="flex-1 h-{{ $height }}% bg-indigo-500/{{ rand(20, 70) }} rounded-sm mx-px"></div>
+                                        @endfor
+                                    </div>
+                                </div>
+                            </div>
+                            
+                           
+                        </div>
+                    </div>
+                </div>
+                @else
+                <div class="bg-gray-800/30 h-full p-5 rounded-xl border border-gray-700 backdrop-blur-md flex flex-col items-center justify-center text-center">
+                    <div class="rounded-full bg-gray-700 p-4 mb-4">
+                        <i class="ph-code-block text-indigo-400 text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-white mb-2">Aucun fichier actif</h3>
+                    <p class="text-gray-400 max-w-md">Ouvrez un fichier dans VS Code avec l'extension CodeTracker pour commencer à suivre votre session de codage.</p>
+                    <button class="mt-5 px-4 py-2 bg-indigo-600/80 hover:bg-indigo-600 rounded-lg text-white text-sm transition-all flex items-center">
+                        <i class="ph-play mr-2"></i>
+                        Démarrer une session
+                    </button>
+                </div>
+                @endif
+            </div>
             <!-- Blocs de statistiques et contenu principal -->
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <!-- Colonne de gauche - Stats du projet -->
-                <div class="lg:col-span-1">
+                <div class="lg:col-span-2">
                     <div class="space-y-5">
                         <!-- Stats du projet -->
                         <div class="bg-gray-800/30 p-5 rounded-xl border border-gray-700 backdrop-blur-md">
@@ -223,113 +276,8 @@
                     </div>
                 </div>
                 
-                <!-- Colonne centrale - Fichier actuel -->
-                <div class="lg:col-span-2">
-                    @if(isset($globalStats['currentFile']))
-                    <div class="bg-gray-800/30 h-full p-5 rounded-xl border border-gray-700 backdrop-blur-md relative overflow-hidden">
-                        <!-- Gradient décoratif -->
-                        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full filter blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
-                        <div class="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/5 rounded-full filter blur-3xl -ml-32 -mb-32 pointer-events-none"></div>
-                        
-                        <h3 class="text-lg font-medium text-white mb-4 pb-3 border-b border-gray-700 flex items-center relative">
-                            <i class="ph-code text-indigo-400 mr-2"></i>
-                            Session active
-                        </h3>
-                        
-                        <!-- Contenu du fichier actuel -->
-                        <div class="space-y-5 relative">
-                            <!-- En-tête du fichier -->
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 rounded-lg bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
-                                    @php
-                                        $iconClass = 'ph-file-code';
-                                        $textColor = 'text-indigo-400';
-                                        
-                                        if (isset($globalStats['currentFile']['language'])) {
-                                            $lang = strtolower($globalStats['currentFile']['language']);
-                                            if (strpos($lang, 'javascript') !== false || strpos($lang, 'js') !== false) {
-                                                $iconClass = 'ph-file-js';
-                                                $textColor = 'text-yellow-400';
-                                            } elseif (strpos($lang, 'css') !== false) {
-                                                $iconClass = 'ph-file-css';
-                                                $textColor = 'text-blue-400';
-                                            } elseif (strpos($lang, 'html') !== false) {
-                                                $iconClass = 'ph-file-html';
-                                                $textColor = 'text-orange-400';
-                                            } elseif (strpos($lang, 'php') !== false) {
-                                                $iconClass = 'ph-file-php';
-                                                $textColor = 'text-purple-400';
-                                            } elseif (strpos($lang, 'python') !== false) {
-                                                $iconClass = 'ph-file-py';
-                                                $textColor = 'text-green-400';
-                                            }
-                                        }
-                                    @endphp
-                                    <i class="{{ $iconClass }} {{ $textColor }} text-2xl"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="text-lg font-medium text-white">{{ basename($globalStats['currentFile']['name']) }}</h3>
-                                    <p class="text-sm text-gray-400 truncate">{{ $globalStats['currentFile']['path'] }}</p>
-                                    <div class="flex items-center mt-2 flex-wrap gap-2">
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs bg-gray-600/40 {{ $textColor }}">
-                                            {{ ucfirst($globalStats['currentFile']['language']) }}
-                                        </span>
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs bg-gray-600/40 text-gray-300">
-                                            {{ $globalStats['currentFile']['lines'] }} lignes
-                                        </span>
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs bg-gray-600/40 text-indigo-300">
-                                            {{ $globalStats['currentFile']['formattedTime'] }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Activité -->
-                            <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div class="flex items-center space-x-2 text-gray-400 text-sm">
-                                        <i class="ph-activity text-green-400"></i>
-                                        <span>Dernière activité il y a {{ isset($globalStats['currentFile']['lastActive']) ? $globalStats['currentFile']['lastActive'] : 'quelques instants' }}</span>
-                                    </div>
-                                    <div class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-500/20 text-green-400">
-                                        En cours d'édition
-                                    </div>
-                                </div>
-                                
-                                <!-- Timeline stylisée -->
-                                <div class="relative h-12 mb-3">
-                                    <div class="absolute inset-0 overflow-hidden">
-                                        <div class="w-full h-full flex items-end">
-                                            <!-- Graphique d'activité simulé -->
-                                            @for($i = 0; $i < 50; $i++)
-                                                @php $height = rand(15, 100); @endphp
-                                                <div class="flex-1 h-{{ $height }}% bg-indigo-500/{{ rand(20, 70) }} rounded-sm mx-px"></div>
-                                            @endfor
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                               
-                            </div>
-                        </div>
-                    </div>
-                    @else
-                    <div class="bg-gray-800/30 h-full p-5 rounded-xl border border-gray-700 backdrop-blur-md flex flex-col items-center justify-center text-center">
-                        <div class="rounded-full bg-gray-700 p-4 mb-4">
-                            <i class="ph-code-block text-indigo-400 text-3xl"></i>
-                        </div>
-                        <h3 class="text-lg font-medium text-white mb-2">Aucun fichier actif</h3>
-                        <p class="text-gray-400 max-w-md">Ouvrez un fichier dans VS Code avec l'extension CodeTracker pour commencer à suivre votre session de codage.</p>
-                        <button class="mt-5 px-4 py-2 bg-indigo-600/80 hover:bg-indigo-600 rounded-lg text-white text-sm transition-all flex items-center">
-                            <i class="ph-play mr-2"></i>
-                            Démarrer une session
-                        </button>
-                    </div>
-                    @endif
-                </div>
-                
                 <!-- Colonne de droite - Technologies utilisées -->
-                <div class="lg:col-span-1">
+                <div class="lg:col-span-2">
                     <div class="bg-gray-800/30 h-full p-5 rounded-xl border border-gray-700 backdrop-blur-md">
                         <h3 class="text-lg font-medium text-white mb-4 pb-3 border-b border-gray-700 flex items-center">
                             <i class="ph-brackets-curly text-indigo-400 mr-2"></i>
@@ -427,15 +375,15 @@
                     <button class="px-4 py-2 rounded-lg bg-gray-700 text-gray-300 text-sm hover:bg-gray-600">Mois</button>
                 </div>
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 gap-6">
                 <!-- Line Chart -->
                 <div>
-                    <canvas id="activityChart" class="w-full h-[200px]"></canvas>
+                    <canvas id="activityChart" class="w-full h-[400px]"></canvas>
                 </div>
                 <!-- Doughnut Chart -->
-                <div>
+                {{-- <div>
                     <canvas id="languagesChart" class="w-full h-[200px]"></canvas>
-                </div>
+                </div> --}}
             </div>
         </div>
 
@@ -456,7 +404,7 @@
             </div>
             
             <!-- Conteneur du graphique avec style amélioré -->
-            <div class="relative h-[400px] lg:h-[500px] bg-gray-800/30 rounded-xl border border-gray-700 shadow-lg overflow-hidden">
+            <div class="relative h-[400px] lg:h-[500px] overflow-hidden">
                 <!-- Canvas pour Chart.js -->
                 <canvas id="polarAreaChart" class="w-full h-full p-4"></canvas>
                 
@@ -476,7 +424,99 @@
             </div>
         </div>
 
-        <script>
+       
+
+        <!-- Section des projets récents -->
+        <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700 ">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold text-white">Projets récents</h2>
+                <a href="{{ route('user.dashboard.projects') }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+                    Voir tous les projets
+                    <i class="ph-arrow-right ml-1"></i>
+                </a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @forelse($projects->take(3) as $project)
+                <div class="bg-gray-800/30 p-5 rounded-xl border border-gray-600 hover:border-indigo-500/50 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-white font-medium flex items-center">
+                            <i class="ph-folder text-indigo-400 mr-2"></i>
+                            {{ $project->name }}
+                        </h3>
+                        <span class="px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-400">
+                            {{ isset($globalStats['currentProject']) && $globalStats['currentProject']['id'] == $project->id ? 'Actif' : 'Récent' }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between text-sm mb-3">
+                        <span class="text-gray-400">{{ \App\Models\Language::formatTime($project->getTotalTime()) }}</span>
+                        <span class="text-gray-400">{{ $project->getTotalFiles() }} fichiers</span>
+                    </div>
+                    
+                    <div class="flex gap-1 my-3">
+                        @for ($i = 0; $i < 10; $i++)
+                            @php
+                                $active = $i < 7.5;
+                                if (isset($globalStats['currentProject']) && $globalStats['currentProject']['id'] == $project->id) {
+                                    $active = $i < 9;
+                                }
+                            @endphp
+                            <div class="flex-1 h-1 rounded-full {{ $active ? 'bg-indigo-600' : 'bg-gray-600/30' }}"></div>
+                        @endfor
+                    </div>
+                    
+                    <div class="mt-4">
+                        @if($project->languages && $project->languages->count() > 0)
+                            <!-- Section avec les langages de projets -->
+                            @foreach($project->languages->take(3) as $language)
+                            <div class="flex items-center justify-between text-sm mb-2">
+                                <div class="flex items-center">
+                                    @php
+                                        $iconClass = 'ph-file-code';
+                                        $textColor = 'text-indigo-400';
+                                        
+                                        if (strtolower($language->name) === 'javascript') {
+                                            $iconClass = 'ph-file-js';
+                                            $textColor = 'text-yellow-400';
+                                        } elseif (strtolower($language->name) === 'css') {
+                                            $iconClass = 'ph-file-css';
+                                            $textColor = 'text-blue-400';
+                                        } elseif (strtolower($language->name) === 'html') {
+                                            $iconClass = 'ph-file-html';
+                                            $textColor = 'text-orange-400';
+                                        } elseif (strtolower($language->name) === 'php') {
+                                            $iconClass = 'ph-file-php';
+                                            $textColor = 'text-purple-400';
+                                        } elseif (strtolower($language->name) === 'python') {
+                                            $iconClass = 'ph-file-py';
+                                            $textColor = 'text-green-400';
+                                        }
+                                    @endphp
+                                    <i class="{{ $iconClass }} {{ $textColor }} mr-2"></i>
+                                    <span class="text-gray-300">{{ $language->name }}</span>
+                                </div>
+                                <span class="text-gray-400">{{ \App\Models\Language::formatTime($language->time_ms ?? 0) }}</span>
+                            </div>
+                            @endforeach
+                        @else
+                            <p class="text-gray-400 text-sm">Aucune donnée de langage disponible</p>
+                        @endif
+                    </div>
+                </div>
+                @empty
+                <div class="col-span-full bg-gray-700/50 p-5 rounded-xl border border-gray-600 text-center">
+                    <i class="ph-folders text-indigo-400 text-4xl mb-3"></i>
+                    <h3 class="text-lg font-medium text-white mb-2">Aucun projet récent</h3>
+                    <p class="text-gray-400">Commencez à coder avec l'extension pour voir apparaître vos projets ici.</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+    </main>
+
+
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Récupération des données depuis le contrôleur
             const languageLabels = {!! json_encode(array_keys($globalStats['languages'] ?? [])) !!};
@@ -752,182 +792,6 @@
         });
         </script>
 
-        <!-- Projects Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700">
-                <h2 class="text-xl font-semibold text-white mb-6">Projets actifs</h2>
-                <div class="space-y-4">
-                    @forelse($projects->take(3) as $project)
-                    <!-- Project Card -->
-                    <div class="p-4 bg-gray-800/30 border border-gray-700 rounded-xl">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-white font-medium">{{ $project->name }}</h3>
-                            <span class="px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-400">
-                                {{ isset($globalStats['currentProject']) && $globalStats['currentProject']['id'] == $project->id ? 'Actif' : 'Récent' }}
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-600 rounded-full h-2">
-                            @php
-                                $percentage = 75; // Valeur par défaut
-                                if (isset($globalStats['currentProject']) && $globalStats['currentProject']['id'] == $project->id) {
-                                    // Calculer un pourcentage basé sur l'activité
-                                    $percentage = 100;
-                                } elseif ($project->getTotalTime() > 0) {
-                                    $percentage = min(95, max(30, $project->getTotalTime() / 36000000 * 100)); // 10h = 100%
-                                }
-                            @endphp
-                            <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $percentage }}%"></div>
-                        </div>
-                        <div class="flex justify-between mt-2 text-sm">
-                            <span class="text-gray-400">{{ \App\Models\Language::formatTime($project->getTotalTime()) }}</span>
-                            <span class="text-indigo-400">{{ $percentage }}%</span>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="p-4 bg-gray-800/30 border border-gray-700 rounded-xl text-center">
-                        <p class="text-gray-400">Aucun projet actif</p>
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700">
-                <h2 class="text-xl font-semibold text-white mb-6">Fichiers récents</h2>
-                <div class="space-y-4">
-                    @if(isset($globalStats['currentFile']))
-                    <!-- File Card -->
-                    <div class="flex items-center justify-between p-4 bg-gray-800/30 border border-gray-700 rounded-xl">
-                        <div class="flex items-center space-x-3">
-                            @php
-                                $iconClass = 'ph-file-code';
-                                $iconColor = 'text-blue-400';
-                                
-                                $lang = strtolower($globalStats['currentFile']['language']);
-                                if (strpos($lang, 'javascript') !== false || strpos($lang, 'js') !== false) {
-                                    $iconClass = 'ph-file-js';
-                                    $iconColor = 'text-yellow-400';
-                                } elseif (strpos($lang, 'css') !== false) {
-                                    $iconClass = 'ph-file-css';
-                                    $iconColor = 'text-blue-400';
-                                } elseif (strpos($lang, 'html') !== false) {
-                                    $iconClass = 'ph-file-html';
-                                    $iconColor = 'text-orange-400';
-                                } elseif (strpos($lang, 'php') !== false) {
-                                    $iconClass = 'ph-file-php';
-                                    $iconColor = 'text-purple-400';
-                                } elseif (strpos($lang, 'python') !== false) {
-                                    $iconClass = 'ph-file-py';
-                                    $iconColor = 'text-green-400';
-                                }
-                            @endphp
-                            <span class="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center">
-                                <i class="{{ $iconClass }} {{ $iconColor }}"></i>
-                            </span>
-                            <div>
-                                <h4 class="text-white">{{ basename($globalStats['currentFile']['name']) }}</h4>
-                                <p class="text-sm text-gray-400">{{ dirname($globalStats['currentFile']['path']) }}</p>
-                            </div>
-                        </div>
-                        <span class="text-gray-400">{{ $globalStats['currentFile']['formattedTime'] }}</span>
-                    </div>
-                    @else
-                    <div class="p-4 bg-gray-800/30 border border-gray-700 rounded-xl text-center">
-                        <p class="text-gray-400">Aucun fichier récent</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <!-- Section des projets récents -->
-        <div class="bg-gray-900 backdrop-blur-xl p-6 rounded-2xl border border-gray-700 ">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-semibold text-white">Projets récents</h2>
-                <a href="{{ route('user.dashboard.projects') }}" class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
-                    Voir tous les projets
-                    <i class="ph-arrow-right ml-1"></i>
-                </a>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                @forelse($projects->take(3) as $project)
-                <div class="bg-gray-800/30 p-5 rounded-xl border border-gray-600 hover:border-indigo-500/50 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-white font-medium flex items-center">
-                            <i class="ph-folder text-indigo-400 mr-2"></i>
-                            {{ $project->name }}
-                        </h3>
-                        <span class="px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-400">
-                            {{ isset($globalStats['currentProject']) && $globalStats['currentProject']['id'] == $project->id ? 'Actif' : 'Récent' }}
-                        </span>
-                    </div>
-                    
-                    <div class="flex justify-between text-sm mb-3">
-                        <span class="text-gray-400">{{ \App\Models\Language::formatTime($project->getTotalTime()) }}</span>
-                        <span class="text-gray-400">{{ $project->getTotalFiles() }} fichiers</span>
-                    </div>
-                    
-                    <div class="flex gap-1 my-3">
-                        @for ($i = 0; $i < 10; $i++)
-                            @php
-                                $active = $i < 7.5;
-                                if (isset($globalStats['currentProject']) && $globalStats['currentProject']['id'] == $project->id) {
-                                    $active = $i < 9;
-                                }
-                            @endphp
-                            <div class="flex-1 h-1 rounded-full {{ $active ? 'bg-indigo-600' : 'bg-gray-600/30' }}"></div>
-                        @endfor
-                    </div>
-                    
-                    <div class="mt-4">
-                        @if($project->languages && $project->languages->count() > 0)
-                            <!-- Section avec les langages de projets -->
-                            @foreach($project->languages->take(3) as $language)
-                            <div class="flex items-center justify-between text-sm mb-2">
-                                <div class="flex items-center">
-                                    @php
-                                        $iconClass = 'ph-file-code';
-                                        $textColor = 'text-indigo-400';
-                                        
-                                        if (strtolower($language->name) === 'javascript') {
-                                            $iconClass = 'ph-file-js';
-                                            $textColor = 'text-yellow-400';
-                                        } elseif (strtolower($language->name) === 'css') {
-                                            $iconClass = 'ph-file-css';
-                                            $textColor = 'text-blue-400';
-                                        } elseif (strtolower($language->name) === 'html') {
-                                            $iconClass = 'ph-file-html';
-                                            $textColor = 'text-orange-400';
-                                        } elseif (strtolower($language->name) === 'php') {
-                                            $iconClass = 'ph-file-php';
-                                            $textColor = 'text-purple-400';
-                                        } elseif (strtolower($language->name) === 'python') {
-                                            $iconClass = 'ph-file-py';
-                                            $textColor = 'text-green-400';
-                                        }
-                                    @endphp
-                                    <i class="{{ $iconClass }} {{ $textColor }} mr-2"></i>
-                                    <span class="text-gray-300">{{ $language->name }}</span>
-                                </div>
-                                <span class="text-gray-400">{{ \App\Models\Language::formatTime($language->time_ms ?? 0) }}</span>
-                            </div>
-                            @endforeach
-                        @else
-                            <p class="text-gray-400 text-sm">Aucune donnée de langage disponible</p>
-                        @endif
-                    </div>
-                </div>
-                @empty
-                <div class="col-span-full bg-gray-700/50 p-5 rounded-xl border border-gray-600 text-center">
-                    <i class="ph-folders text-indigo-400 text-4xl mb-3"></i>
-                    <h3 class="text-lg font-medium text-white mb-2">Aucun projet récent</h3>
-                    <p class="text-gray-400">Commencez à coder avec l'extension pour voir apparaître vos projets ici.</p>
-                </div>
-                @endforelse
-            </div>
-        </div>
-    </main>
-
     <!-- Ajout du script Chart.js à la fin du body -->
     <script>
         // Configuration du thème global de Chart.js
@@ -1032,4 +896,6 @@
             }
         });
     </script>
+
+
 </x-app-layout>

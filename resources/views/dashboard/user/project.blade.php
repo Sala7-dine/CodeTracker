@@ -33,7 +33,7 @@
 
         <!-- Statistiques générales dans des cartes élégantes -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 relative overflow-hidden">
+            <div class="bg-gray-900/30 p-6 rounded-2xl border border-gray-700 relative overflow-hidden">
                 <!-- Élément décoratif -->
                 <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-600/10 rounded-full filter blur-xl -mr-8 -mt-8"></div>
                 
@@ -73,7 +73,7 @@
                 </div>
             </div>
             
-            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 relative overflow-hidden">
+            <div class="bg-gray-900/30 p-6 rounded-2xl border border-gray-700 relative overflow-hidden">
                 <!-- Élément décoratif -->
                 <div class="absolute bottom-0 left-0 w-24 h-24 bg-blue-600/10 rounded-full filter blur-xl -ml-8 -mb-8"></div>
                 
@@ -101,7 +101,7 @@
                 </div>
             </div>
             
-            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 relative overflow-hidden">
+            <div class="bg-gray-900/30 p-6 rounded-2xl border border-gray-700 relative overflow-hidden">
                 <!-- Élément décoratif -->
                 <div class="absolute top-0 left-0 w-24 h-24 bg-purple-600/10 rounded-full filter blur-xl -ml-8 -mt-8"></div>
                 
@@ -145,7 +145,7 @@
         </div>
         
         <!-- Informations sur l'environnement -->
-        <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 mb-8">
+        <div class="bg-gray-900/30 p-6 rounded-2xl border border-gray-700 mb-8">
             <h2 class="text-xl font-semibold text-white mb-6 flex items-center">
                 <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600/40 to-purple-600/40 flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/10">
                     <i class="ph-desktop text-indigo-400"></i>
@@ -220,10 +220,10 @@
         </div>
 
         <!-- Section principale avec graphiques et fichiers -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 gap-6">
             <!-- Langages avec graphiques améliorés -->
             <div class="lg:col-span-1">
-                <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 mb-6">
+                <div class="bg-gray-900/30 p-6 rounded-2xl border border-gray-700 mb-6">
                     <h2 class="text-xl font-semibold text-white mb-6 flex items-center">
                         <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600/40 to-purple-600/40 flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/10">
                             <i class="ph-code text-indigo-400"></i>
@@ -233,10 +233,10 @@
                     
                     <div class="space-y-6">
                         @if($project->languages->count() > 0)
-                            <div class="relative h-[200px] mb-6">
+                            <div class="relative h-[350px] mb-6">
                                 <canvas id="languagesChart"></canvas>
                             </div>
-                            
+                            <div class="grid grid-cols-4 gap-2">
                             @foreach($project->languages as $language)
                                 @php
                                     $langColor = 'indigo';
@@ -263,6 +263,8 @@
                                     $totalTime = $project->getTotalTime();
                                     $percentage = $totalTime > 0 ? ($language->time_ms / $totalTime) * 100 : 0;
                                 @endphp
+
+
                                 
                                 <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-700 hover:border-{{ $langColor }}-500/50 transition-all">
                                     <div class="flex items-center justify-between mb-3">
@@ -289,6 +291,7 @@
                                     </div>
                                 </div>
                             @endforeach
+                        </div>
                         @else
                             <div class="bg-gray-900/50 p-6 rounded-xl text-center">
                                 <i class="ph-code-block text-indigo-400 text-4xl mb-3"></i>
@@ -299,8 +302,11 @@
                     </div>
                 </div>
                 
-                <!-- Ajout d'un graphique de tendance de productivité -->
-                <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+
+                <div class="grid grid-cols-2 gap-2">
+
+                     <!-- Ajout d'un graphique de tendance de productivité -->
+                <div class="bg-gray-900/30 p-6 rounded-2xl border border-gray-700">
                     <h2 class="text-xl font-semibold text-white mb-6 flex items-center">
                         <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-600/40 to-emerald-600/40 flex items-center justify-center mr-3 shadow-lg shadow-green-500/10">
                             <i class="ph-chart-line-up text-green-400"></i>
@@ -336,12 +342,69 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Nouveau graphique d'activité par heure de la journée -->
+                <div class="bg-gray-900/30 p-6 rounded-2xl border border-gray-700">
+                    <h2 class="text-xl font-semibold text-white mb-6 flex items-center">
+                        <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600/40 to-pink-600/40 flex items-center justify-center mr-3 shadow-lg shadow-purple-500/10">
+                            <i class="ph-chart-bar text-purple-400"></i>
+                        </span>
+                        Répartition d'activité
+                    </h2>
+                    
+                    <div class="relative h-[300px]">
+                        <canvas id="activityHeatmapChart"></canvas>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                        <div class="bg-gray-900/50 p-4 rounded-lg text-center">
+                            <p class="text-xs text-gray-400 mb-1">Heures de code</p>
+                            <p class="text-xl text-white font-semibold">{{ round($project->getTotalTime() / 3600000, 1) }}</p>
+                            <p class="text-xs text-purple-400 mt-1">Projet total</p>
+                        </div>
+                        
+                        <div class="bg-gray-900/50 p-4 rounded-lg text-center">
+                            <p class="text-xs text-gray-400 mb-1">Moyenne par jour</p>
+                            <p class="text-xl text-white font-semibold">
+                                @php
+                                    $avgDailyHours = isset($chartData['weekly']['data']) && count($chartData['weekly']['data']) > 0 
+                                        ? array_sum($chartData['weekly']['data']) / count(array_filter($chartData['weekly']['data'])) 
+                                        : 0;
+                                @endphp
+                                {{ number_format($avgDailyHours, 1) }}h
+                            </p>
+                            @if(isset($productivityStats['percentChange']))
+                                <p class="text-xs text-{{ $productivityStats['percentChange'] >= 0 ? 'green' : 'red' }}-400 mt-1">
+                                    {{ $productivityStats['percentChange'] > 0 ? '+' : '' }}{{ $productivityStats['percentChange'] }}% cette semaine
+                                </p>
+                            @endif
+                        </div>
+                        
+                        <div class="bg-gray-900/50 p-4 rounded-lg text-center">
+                            <p class="text-xs text-gray-400 mb-1">Jours actifs</p>
+                            <p class="text-xl text-white font-semibold">
+                                @php
+                                    $activeDays = isset($chartData['weekly']['data']) 
+                                        ? count(array_filter($chartData['weekly']['data'], function($h) { return $h > 0; }))
+                                        : 0;
+                                @endphp
+                                {{ $activeDays }} / 7
+                            </p>
+                            <p class="text-xs text-blue-400 mt-1">
+                                {{ $activities->count() }} sessions
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                </div>
+               
             </div>
             
             <!-- Colonne de droite avec fichiers récents et nouveau graphique d'activité -->
-            <div class="lg:col-span-2">
+            <div class="">
                 <!-- Fichiers récents -->
-                <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 mb-6">
+                <div class="bg-gray-900/30 p-6 rounded-2xl border border-gray-700 mb-6">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-xl font-semibold text-white flex items-center">
                             <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600/40 to-cyan-600/40 flex items-center justify-center mr-3 shadow-lg shadow-blue-500/10">
@@ -408,97 +471,60 @@
                     </div>
                 </div>
                 
-                <!-- Nouveau graphique d'activité par heure de la journée -->
-                <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
-                    <h2 class="text-xl font-semibold text-white mb-6 flex items-center">
-                        <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600/40 to-pink-600/40 flex items-center justify-center mr-3 shadow-lg shadow-purple-500/10">
-                            <i class="ph-chart-bar text-purple-400"></i>
+               
+            </div>
+
+
+
+
+            <div class="grid grid-cols-1 gap-2">
+                 
+
+
+                <!-- Nouvelle section avec le graphique d'activité temporelle -->
+            <div class="bg-gray-900/30 p-6 rounded-2xl border border-gray-700">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-white flex items-center">
+                        <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600/40 to-purple-600/40 flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/10">
+                            <i class="ph-clock text-indigo-400"></i>
                         </span>
-                        Répartition d'activité
+                        Activité temporelle
                     </h2>
-                    
-                    <div class="relative h-[300px]">
-                        <canvas id="activityHeatmapChart"></canvas>
+                    <div class="flex space-x-2">
+                        <button class="period-btn px-4 py-2 bg-indigo-600 text-white rounded-lg">Quotidien</button>
+                        <button class="period-btn px-4 py-2 bg-gray-700 text-gray-300 hover:bg-gray-600 rounded-lg" data-period="weekly">Hebdomadaire</button>
+                        <button class="period-btn px-4 py-2 bg-gray-700 text-gray-300 hover:bg-gray-600 rounded-lg" data-period="monthly">Mensuel</button>
                     </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                        <div class="bg-gray-900/50 p-4 rounded-lg text-center">
-                            <p class="text-xs text-gray-400 mb-1">Heures de code</p>
-                            <p class="text-xl text-white font-semibold">{{ round($project->getTotalTime() / 3600000, 1) }}</p>
-                            <p class="text-xs text-purple-400 mt-1">Projet total</p>
-                        </div>
-                        
-                        <div class="bg-gray-900/50 p-4 rounded-lg text-center">
-                            <p class="text-xs text-gray-400 mb-1">Moyenne par jour</p>
-                            <p class="text-xl text-white font-semibold">
-                                @php
-                                    $avgDailyHours = isset($chartData['weekly']['data']) && count($chartData['weekly']['data']) > 0 
-                                        ? array_sum($chartData['weekly']['data']) / count(array_filter($chartData['weekly']['data'])) 
-                                        : 0;
-                                @endphp
-                                {{ number_format($avgDailyHours, 1) }}h
-                            </p>
-                            @if(isset($productivityStats['percentChange']))
-                                <p class="text-xs text-{{ $productivityStats['percentChange'] >= 0 ? 'green' : 'red' }}-400 mt-1">
-                                    {{ $productivityStats['percentChange'] > 0 ? '+' : '' }}{{ $productivityStats['percentChange'] }}% cette semaine
-                                </p>
-                            @endif
-                        </div>
-                        
-                        <div class="bg-gray-900/50 p-4 rounded-lg text-center">
-                            <p class="text-xs text-gray-400 mb-1">Jours actifs</p>
-                            <p class="text-xl text-white font-semibold">
-                                @php
-                                    $activeDays = isset($chartData['weekly']['data']) 
-                                        ? count(array_filter($chartData['weekly']['data'], function($h) { return $h > 0; }))
-                                        : 0;
-                                @endphp
-                                {{ $activeDays }} / 7
-                            </p>
-                            <p class="text-xs text-blue-400 mt-1">
-                                {{ $activities->count() }} sessions
-                            </p>
-                        </div>
+                </div>
+                
+                <div class="relative h-[350px] mb-6">
+                    <canvas id="timeActivityChart"></canvas>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-900/50 p-4 rounded-lg text-center">
+                        <p class="text-xs text-gray-400 mb-1">Total</p>
+                        <p class="text-xl text-white font-semibold" id="period-total">0h</p>
+                    </div>
+                    <div class="bg-gray-900/50 p-4 rounded-lg text-center">
+                        <p class="text-xs text-gray-400 mb-1">Moyenne</p>
+                        <p class="text-xl text-white font-semibold" id="period-average">0h/heure</p>
+                    </div>
+                    <div class="bg-gray-900/50 p-4 rounded-lg text-center">
+                        <p class="text-xs text-gray-400 mb-1">Temps le plus productif</p>
+                        <p class="text-xl text-white font-semibold" id="most-productive-time">N/A</p>
                     </div>
                 </div>
             </div>
+            </div>
+            
+
         </div>
 
-        <!-- Nouvelle section avec le graphique d'activité temporelle -->
-        <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 mt-6">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-semibold text-white flex items-center">
-                    <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600/40 to-purple-600/40 flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/10">
-                        <i class="ph-clock text-indigo-400"></i>
-                    </span>
-                    Activité temporelle
-                </h2>
-                <div class="flex space-x-2">
-                    <button class="period-btn px-4 py-2 bg-indigo-600 text-white rounded-lg">Quotidien</button>
-                    <button class="period-btn px-4 py-2 bg-gray-700 text-gray-300 hover:bg-gray-600 rounded-lg" data-period="weekly">Hebdomadaire</button>
-                    <button class="period-btn px-4 py-2 bg-gray-700 text-gray-300 hover:bg-gray-600 rounded-lg" data-period="monthly">Mensuel</button>
-                </div>
-            </div>
-            
-            <div class="relative h-[300px] mb-6">
-                <canvas id="timeActivityChart"></canvas>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-gray-900/50 p-4 rounded-lg text-center">
-                    <p class="text-xs text-gray-400 mb-1">Total</p>
-                    <p class="text-xl text-white font-semibold" id="period-total">0h</p>
-                </div>
-                <div class="bg-gray-900/50 p-4 rounded-lg text-center">
-                    <p class="text-xs text-gray-400 mb-1">Moyenne</p>
-                    <p class="text-xl text-white font-semibold" id="period-average">0h/heure</p>
-                </div>
-                <div class="bg-gray-900/50 p-4 rounded-lg text-center">
-                    <p class="text-xs text-gray-400 mb-1">Temps le plus productif</p>
-                    <p class="text-xl text-white font-semibold" id="most-productive-time">N/A</p>
-                </div>
-            </div>
-        </div>
+        
+
+
+
     </main>
 </x-app-layout>
 

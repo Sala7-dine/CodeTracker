@@ -367,11 +367,13 @@
                             <p class="text-xs text-gray-400 mb-1">Moyenne par jour</p>
                             <p class="text-xl text-white font-semibold">
                                 @php
-                                    $avgDailyHours = isset($chartData['weekly']['data']) && count($chartData['weekly']['data']) > 0 
-                                        ? array_sum($chartData['weekly']['data']) / count(array_filter($chartData['weekly']['data'])) 
+                                    $filteredDays = isset($chartData['weekly']['data']) ? array_filter($chartData['weekly']['data']) : [];
+                                    $countFilteredDays = count($filteredDays);
+                                    $avgDailyHours = ($countFilteredDays > 0) 
+                                        ? array_sum($chartData['weekly']['data']) / $countFilteredDays
                                         : 0;
                                 @endphp
-                                {{ number_format($avgDailyHours, 1) }}h
+                                {{ number_format($avgDailyHours, 1) }} h
                             </p>
                             @if(isset($productivityStats['percentChange']))
                                 <p class="text-xs text-{{ $productivityStats['percentChange'] >= 0 ? 'green' : 'red' }}-400 mt-1">

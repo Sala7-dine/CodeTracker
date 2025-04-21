@@ -7,23 +7,27 @@ use App\Models\Project;
 use App\Models\Language;
 use App\Models\Activity;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class ProjetController extends Controller
 {
     public function project($id)
     {
-        $project = Project::with('languages', 'activities')->findOrFail($id);
-     
-        $activities = $project->activities()
+        // Récupérer le projet spécifié ET vérifier qu'il appartient à l'utilisateur connecté
+        $project = Project::with('languages')
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+        
+        // Récupérer les activités de l'utilisateur pour ce projet spécifique
+        $activities = Activity::where('project_id', $project->id)
             ->orderBy('created_at', 'desc')
             ->take(50)
             ->get();
         
         // Récupérer le fichier actuel (le plus récemment modifié) pour ce projet
-        $currentFile = $project->activities()
-            ->orderBy('created_at', 'desc')
-            ->first();
-            
+        $currentFile = $activities->first();
+        
         // Formater le temps total pour le projet
         $formattedTime = Language::formatTime($project->getTotalTime());
 
@@ -57,7 +61,8 @@ class ProjetController extends Controller
 
     public function projects()
     {
-        $projects = Project::with('languages')->get();
+        // Récupérer uniquement les projets de l'utilisateur connecté
+        $projects = Project::where('user_id', Auth::id())->with('languages')->get();
         
         return view('dashboard.user.projects', compact('projects'));
     }

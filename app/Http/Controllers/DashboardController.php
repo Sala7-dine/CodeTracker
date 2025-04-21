@@ -8,21 +8,29 @@ use App\Models\Language;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index(){
-
-
-        $projects = Project::with('languages')->get();
+        // Récupérer l'utilisateur connecté
+        $user = Auth::user();
         
-        $number_of_projects = Project::with('languages')->count();
+        // Récupérer uniquement les projets de l'utilisateur connecté
+        $projects = Project::where('user_id', $user->id)->with('languages')->get();
         
-        // Récupérer le projet le plus récemment actif
-        $activeProject = Project::orderBy('created_at', 'desc')->first();
+        $number_of_projects = $projects->count();
         
-        // Récupérer l'activité la plus récente
+        // Récupérer le projet le plus récemment actif de l'utilisateur connecté
+        $activeProject = Project::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        // Récupérer l'activité la plus récente de l'utilisateur connecté
         $latestActivity = Activity::with('project')
+            ->whereHas('project', function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
             ->orderBy('created_at', 'desc')
             ->first();
         
@@ -32,8 +40,8 @@ class DashboardController extends Controller
             'totalLines' => 0,
             'totalTime' => 0,
             'currentFile' => null,
-            'languages' => [], // Pour stocker les stats par langage
-            'environment' => [  // Informations d'environnement
+            'languages' => [],
+            'environment' => [
                 'editor' => 'VS Code',
                 'os' => PHP_OS,
                 'extensions' => [
@@ -42,91 +50,83 @@ class DashboardController extends Controller
                     ['name' => 'ESLint', 'active' => true],
                 ]
             ],
-            'currentProject' => null, // Pour stocker les infos du projet actuel
+            'currentProject' => null,
             'debugging_info' => [
                 'latest_activity_id' => $latestActivity ? $latestActivity->id : null,
                 'latest_project_id' => $activeProject ? $activeProject->id : null,
-                'total_activities' => Activity::count(),
+                'total_activities' => Activity::whereHas('project', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })->count(),
                 'has_stats' => $latestActivity && !empty($latestActivity->stats) ? 'oui' : 'non'
             ]
         ];
-
-        if ($latestActivity) {
-            // Débogage pour voir les données stats
-            Log::debug('Stats de la dernière activité', [
-                'activity_id' => $latestActivity->id,
-                'stats' => $latestActivity->stats,
-                'raw_stats_type' => gettype($latestActivity->stats),
-                'file_name' => $latestActivity->file_name,
-                'file_path' => $latestActivity->file_path,
-                'language' => $latestActivity->language,
-                'duration' => $latestActivity->duration
-            ]);
-        }
         
         if ($latestActivity && $latestActivity->project) {
             $activeProject = $latestActivity->project;
             
-            // Vérifier si stats existe et contient currentFile
-            $timeSpent = $latestActivity->duration * 1000; // Valeur par défaut
-            if (isset($latestActivity->stats) && is_array($latestActivity->stats) && 
-                isset($latestActivity->stats['currentFile']) && 
-                isset($latestActivity->stats['currentFile']['timeSpent'])) {
-                $timeSpent = $latestActivity->stats['currentFile']['timeSpent'] * 1000;
-            }
-            
-            // Informations sur le projet actuel
-            $globalStats['currentProject'] = [
-                'id' => $activeProject->id,
-                'name' => $activeProject->name,
-                'totalFiles' => $activeProject->getTotalFiles(),
-                'totalLines' => $activeProject->getTotalLines(),
-                'totalTime' => $activeProject->getTotalTime(),
-                'timeSpent' => $timeSpent,
-                'formattedTime' => Language::formatTime($activeProject->getTotalTime())
-            ];
-            
-            // Informations sur le fichier actuel avec vérifications supplémentaires
-            $globalStats['currentFile'] = [
-                'name' => $latestActivity->file_name ?? basename($latestActivity->file_path ?? 'Inconnu'),
-                'path' => $latestActivity->file_path ?? 'Chemin inconnu',
-                'language' => $latestActivity->language ?? 'inconnu',
-                'lines' => $latestActivity->lines ?? 0,
-                'timeSpent' => $timeSpent,
-                'formattedTime' => Language::formatTime($latestActivity->duration * 1000),
-                'lastActive' => $latestActivity->created_at->diffForHumans(),
-                'edits' => rand(15, 30), // À remplacer par des données réelles
-                'efficiency' => rand(85, 99) . '%', // À remplacer par des données réelles
-                'project' => $activeProject->name
-            ];
-
-            // Récupérer toutes les technologies (langages) du projet actuel uniquement
-            $projectLanguages = Language::where('project_id', $activeProject->id)->get();
-            
-            foreach ($projectLanguages as $language) {
-                $langName = $language->name;
-                
-                // Identifier le bon champ pour le temps
-                $languageTime = 0;
-                if (isset($language->time_spent)) {
-                    $languageTime = $language->time_spent;
-                } elseif (isset($language->time_ms)) {
-                    $languageTime = $language->time_ms;
-                } elseif (isset($language->duration)) {
-                    $languageTime = $language->duration * 1000;
+            // S'assurer que le projet appartient à l'utilisateur connecté
+            if ($activeProject->user_id == $user->id) {
+                // Vérifier si stats existe et contient currentFile
+                $timeSpent = $latestActivity->duration * 1000; // Valeur par défaut
+                if (isset($latestActivity->stats) && is_array($latestActivity->stats) && 
+                    isset($latestActivity->stats['currentFile']) && 
+                    isset($latestActivity->stats['currentFile']['timeSpent'])) {
+                    $timeSpent = $latestActivity->stats['currentFile']['timeSpent'] * 1000;
                 }
                 
-                $globalStats['languages'][$langName] = [
-                    'name' => $langName,
-                    'files' => $language->files,
-                    'lines' => $language->lines,
-                    'time_spent' => $languageTime,
-                    'formattedTime' => Language::formatTime($languageTime)
+                // Informations sur le projet actuel
+                $globalStats['currentProject'] = [
+                    'id' => $activeProject->id,
+                    'name' => $activeProject->name,
+                    'totalFiles' => $activeProject->getTotalFiles(),
+                    'totalLines' => $activeProject->getTotalLines(),
+                    'totalTime' => $activeProject->getTotalTime(),
+                    'timeSpent' => $timeSpent,
+                    'formattedTime' => Language::formatTime($activeProject->getTotalTime())
                 ];
+                
+                // Informations sur le fichier actuel
+                $globalStats['currentFile'] = [
+                    'name' => $latestActivity->file_name ?? basename($latestActivity->file_path ?? 'Inconnu'),
+                    'path' => $latestActivity->file_path ?? 'Chemin inconnu',
+                    'language' => $latestActivity->language ?? 'inconnu',
+                    'lines' => $latestActivity->lines ?? 0,
+                    'timeSpent' => $timeSpent,
+                    'formattedTime' => Language::formatTime($latestActivity->duration * 1000),
+                    'lastActive' => $latestActivity->created_at->diffForHumans(),
+                    'edits' => rand(15, 30),
+                    'efficiency' => rand(85, 99) . '%',
+                    'project' => $activeProject->name
+                ];
+    
+                // Récupérer les langages du projet actuel uniquement
+                $projectLanguages = Language::where('project_id', $activeProject->id)->get();
+                
+                foreach ($projectLanguages as $language) {
+                    $langName = $language->name;
+                    
+                    // Identifier le bon champ pour le temps
+                    $languageTime = 0;
+                    if (isset($language->time_spent)) {
+                        $languageTime = $language->time_spent;
+                    } elseif (isset($language->time_ms)) {
+                        $languageTime = $language->time_ms;
+                    } elseif (isset($language->duration)) {
+                        $languageTime = $language->duration * 1000;
+                    }
+                    
+                    $globalStats['languages'][$langName] = [
+                        'name' => $langName,
+                        'files' => $language->files,
+                        'lines' => $language->lines,
+                        'time_spent' => $languageTime,
+                        'formattedTime' => Language::formatTime($languageTime)
+                    ];
+                }
             }
         }
         
-        // Calculer les totaux à partir de tous les projets pour les statistiques globales
+        // Calculer les totaux à partir des projets de l'utilisateur
         foreach ($projects as $project) {
             $globalStats['totalFiles'] += $project->getTotalFiles();
             $globalStats['totalLines'] += $project->getTotalLines();
@@ -138,29 +138,28 @@ class DashboardController extends Controller
         
         // Ajouter les données de graphiques au tableau globalStats
         $activeProjectId = isset($globalStats['currentProject']) ? $globalStats['currentProject']['id'] : null;
-
+        
         $globalStats['chartData'] = [
-            'weekly' => $this->getWeeklyActivityData($activeProjectId),
-            'monthly' => $this->getMonthlyActivityData($activeProjectId),
-            'daily' => $this->getDailyActivityData($activeProjectId)
+            'weekly' => $this->getWeeklyActivityData($activeProjectId, $user->id),
+            'monthly' => $this->getMonthlyActivityData($activeProjectId, $user->id),
+            'daily' => $this->getDailyActivityData($activeProjectId, $user->id)
         ];
         
         return view('dashboard.user.index', compact('number_of_projects', 'projects', 'globalStats'));
     }
     
-    
-
     /**
-     * Récupérer les données d'activité journalière pour la vue quotidienne (projet actuel uniquement)
+     * Récupérer les données d'activité journalière pour l'utilisateur connecté
      * @param int|null $projectId ID du projet actuel
+     * @param int $userId ID de l'utilisateur connecté
      * @return array
      */
-    private function getDailyActivityData($projectId = null)
+    private function getDailyActivityData($projectId = null, $userId = null)
     {
         $today = Carbon::today();
         $result = [];
         
-        // Labels pour les heures de la journée 
+        // Labels pour les heures de la journée
         $result['labels'] = ['00h', '01h', '02h', '03h', '04h', '05h', '06h', '07h', 
                            '08h', '09h', '10h', '11h', '12h', '13h', 
                            '14h', '15h', '16h', '17h', '18h', '19h', 
@@ -175,7 +174,10 @@ class DashboardController extends Controller
             $end = $start->copy()->addHour();
             
             // Requête de base pour récupérer la durée d'activité pour cette heure
-            $query = Activity::whereBetween('created_at', [$start, $end]);
+            $query = Activity::whereBetween('created_at', [$start, $end])
+                ->whereHas('project', function($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                });
             
             // Filtrer par projet si un ID est fourni
             if ($projectId) {
@@ -187,7 +189,7 @@ class DashboardController extends Controller
             
             $data[] = round($duration, 2);
             
-            // Générer une couleur basée sur l'intensité (plus de temps = plus foncé)
+            // Générer une couleur basée sur l'intensité
             $intensity = min(1.0, $duration / 1.5); // 1.5h = intensité max
             $colors[] = $this->getColorForIntensity($intensity);
         }
@@ -212,11 +214,12 @@ class DashboardController extends Controller
     }
 
     /**
-     * Récupérer les données d'activité hebdomadaire (projet actuel uniquement)
+     * Récupérer les données d'activité hebdomadaire pour l'utilisateur connecté
      * @param int|null $projectId ID du projet actuel
+     * @param int $userId ID de l'utilisateur connecté
      * @return array
      */
-    private function getWeeklyActivityData($projectId = null)
+    private function getWeeklyActivityData($projectId = null, $userId = null)
     {
         $startOfWeek = Carbon::now()->startOfWeek();
         $result = [];
@@ -236,7 +239,10 @@ class DashboardController extends Controller
                 $data[] = 0;
             } else {
                 // Requête de base pour ce jour
-                $query = Activity::whereDate('created_at', $date->format('Y-m-d'));
+                $query = Activity::whereDate('created_at', $date->format('Y-m-d'))
+                    ->whereHas('project', function($query) use ($userId) {
+                        $query->where('user_id', $userId);
+                    });
                 
                 // Filtrer par projet si un ID est fourni
                 if ($projectId) {
@@ -274,11 +280,12 @@ class DashboardController extends Controller
     }
 
     /**
-     * Récupérer les données d'activité mensuelle (projet actuel uniquement)
+     * Récupérer les données d'activité mensuelle pour l'utilisateur connecté
      * @param int|null $projectId ID du projet actuel
+     * @param int $userId ID de l'utilisateur connecté
      * @return array
      */
-    private function getMonthlyActivityData($projectId = null)
+    private function getMonthlyActivityData($projectId = null, $userId = null)
     {
         $now = Carbon::now();
         $result = [];
@@ -303,7 +310,10 @@ class DashboardController extends Controller
             $query = Activity::whereBetween('created_at', [
                                 $startOfWeek->startOfDay(), 
                                 $endOfWeek->endOfDay()
-                            ]);
+                            ])
+                            ->whereHas('project', function($query) use ($userId) {
+                                $query->where('user_id', $userId);
+                            });
                             
             // Filtrer par projet si un ID est fourni
             if ($projectId) {

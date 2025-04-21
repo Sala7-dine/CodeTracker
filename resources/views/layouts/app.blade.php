@@ -66,8 +66,10 @@
                             <i class="ph-folders text-white text-lg"></i>
                         </span>
                         <div>
-                            <h3 class="text-xl font-medium text-white">Sélectionner un projet</h3>
-                            <p class="text-gray-400 text-sm">Choisissez un projet pour voir ses détails</p>
+                            <h3 class="text-xl font-medium text-white">Vos projets</h3>
+                            <p class="text-gray-400 text-sm">
+                                {{ Auth::user() ? Auth::user()->name : 'Connectez-vous pour voir vos projets' }}
+                            </p>
                         </div>
                     </div>
                     <button class="text-gray-400 hover:text-white transition-colors" onclick="closeProjectModal()">
@@ -103,16 +105,28 @@
                             onclick="closeProjectModal()">
                         Annuler
                     </button>
-                    <a href="#" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all">
-                        <i class="ph-plus mr-1"></i>Nouveau projet
-                    </a>
                 </div>
             </div>
         </div>
 
-        <script>
+    <script>
         // Projets (sera chargé depuis le serveur)
         let allProjects = [];
+
+        // Ajouter cette fonction de gestion des erreurs
+        function handleAuthError() {
+            const projectsList = document.getElementById('projects-list');
+            projectsList.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="ph-lock text-yellow-500 text-4xl mb-3"></i>
+                    <p class="text-white font-medium">Session expirée</p>
+                    <p class="text-gray-400 mb-4">Votre session a expiré. Veuillez vous reconnecter.</p>
+                    <a href="/login" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 inline-block">
+                        Se reconnecter
+                    </a>
+                </div>
+            `;
+        }
 
         // Charger les projets via fetch
         function loadProjects() {
@@ -123,14 +137,35 @@
             projectsList.innerHTML = '';
             projectsList.appendChild(loadingIndicator);
             
-            fetch('/api/projects')
-                .then(response => response.json())
-                .then(data => {
-                    allProjects = data;
-                    renderProjects(allProjects);
-                })
-                .catch(error => {
-                    console.error('Erreur lors du chargement des projets:', error);
+            // Récupérer le token CSRF pour l'authentification
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            fetch('/api/projects', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin' // Important pour les requêtes authentifiées
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erreur réseau ou non autorisé');
+                }
+                return response.json();
+            })
+            .then(data => {
+                allProjects = data;
+                renderProjects(allProjects);
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des projets:', error);
+                
+                // Vérifier si l'erreur est liée à l'authentification
+                if (error.message.includes('non autorisé') || error.message.includes('401') || error.message.includes('403')) {
+                    handleAuthError();
+                } else {
                     projectsList.innerHTML = `
                         <div class="text-center py-8">
                             <i class="ph-warning-circle text-red-500 text-4xl mb-3"></i>
@@ -140,7 +175,8 @@
                             </button>
                         </div>
                     `;
-                });
+                }
+            });
         }
 
         // Fonction pour rendre les projets dans la modal
@@ -152,10 +188,12 @@
                 projectsList.innerHTML = `
                     <div class="text-center py-8">
                         <i class="ph-folder-open text-gray-500 text-4xl mb-3"></i>
-                        <p class="text-gray-400">Aucun projet trouvé</p>
-                        <button class="mt-4 px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                            <i class="ph-plus mr-1"></i>Créer un nouveau projet
-                        </button>
+                        <p class="text-white font-medium">Aucun projet trouvé</p>
+                        <p class="text-gray-400 mb-4">Vous n'avez pas encore de projets ou ils n'ont pas été détectés.</p>
+                        <p class="text-gray-400 text-sm mb-4">Pour commencer, installez l'extension CodeTracker dans VS Code et commencez à coder.</p>
+                        <a href="#" class="mt-4 px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 inline-block">
+                            <i class="ph-download mr-1"></i>Télécharger l'extension
+                        </a>
                     </div>
                 `;
                 return;
@@ -257,7 +295,7 @@
             }
         });
 
-        </script>
+    </script>
 
     </body>
 </html>

@@ -105,14 +105,14 @@ class ActivityController extends Controller
             
             // Récupérer ou créer le projet avec user_id
             $project = Project::firstOrCreate(
-                ['name' => $request->project, 'user_id' => $userId],
                 [
-                    'user_id' => $userId,
-                    'description' => 'Projet créé automatiquement',
-                    'environment_info' => [
-                        'editor' => 'VS Code',
-                        'os' => PHP_OS,
-                    ]
+                    'name' => $request->project,
+                    'user_id' => $userId // Ici, on associe le projet à l'utilisateur
+                ],
+                [
+                    'directory' => $request->directory ?? null,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
                 ]
             );
             

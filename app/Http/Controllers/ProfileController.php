@@ -27,7 +27,7 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
         
-        // Règles de validation de base
+        // Règles de validation de base 
         $rules = [
             'firstname' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',

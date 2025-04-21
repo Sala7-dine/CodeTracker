@@ -4,8 +4,7 @@
 
     <!-- Main Content -->
     <main class="ml-20 p-8">
-        
-
+    
         @include("layouts.user_header");
 
         @include("layouts.stats_cards");

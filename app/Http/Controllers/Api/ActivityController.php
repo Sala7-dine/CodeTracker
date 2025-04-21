@@ -67,55 +67,86 @@ class ActivityController extends Controller
         }
         
         try {
-            // Obtenir un utilisateur valide (soit authentifié, soit par défaut)
+            // MODIFICATION ICI - Simplification de l'attribution de l'utilisateur
             $userId = null;
             
             // Option 1: Essayer de récupérer l'utilisateur authentifié
             if (auth()->check()) {
                 $userId = auth()->id();
+                Log::info('Utilisateur authentifié trouvé', ['id' => $userId]);
             }
             
-            // Option 2: Utiliser un utilisateur passé dans la requête
-            if (!$userId && $request->has('user_id')) {
-                $userId = $request->user_id;
-            }
-            
-            // Option 3: Utiliser un API key si présent dans l'en-tête
-            if (!$userId && $request->hasHeader('X-API-KEY')) {
+            // Option 2: Si API key fournie, utiliser cet utilisateur
+            else if ($request->hasHeader('X-API-KEY')) {
                 $apiKey = $request->header('X-API-KEY');
                 $user = User::where('api_key', $apiKey)->first();
                 if ($user) {
                     $userId = $user->id;
+                    Log::info('Utilisateur trouvé via API key', ['id' => $userId]);
                 }
             }
             
-            // Option 4: Utiliser l'utilisateur par défaut (ici l'ID 1)
+            // Option 3: Si user_id fourni et valide
+            else if ($request->has('user_id')) {
+                $userExists = User::where('id', $request->user_id)->exists();
+                if ($userExists) {
+                    $userId = $request->user_id;
+                    Log::info('Utilisateur trouvé via user_id', ['id' => $userId]);
+                }
+            }
+            
+            // Si aucun utilisateur trouvé, retourner une erreur
             if (!$userId) {
-                // Pour le développement/démo, utiliser le premier utilisateur
-                $user = User::first();
-                if ($user) {
-                    $userId = $user->id;
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'error' => 'Aucun utilisateur trouvé dans le système'
-                    ], 500);
-                }
+                Log::error('Impossible d\'identifier l\'utilisateur pour la sauvegarde du projet', [
+                    'request_data' => $request->only(['project', 'file']),
+                    'headers' => $request->header()
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Utilisateur non authentifié',
+                    'message' => 'Pour enregistrer vos activités, vous devez être connecté ou utiliser une API key valide',
+                    'resolution' => 'Veuillez vous connecter à l\'application web puis réessayer'
+                ], 401);
             }
             
-            // Récupérer ou créer le projet avec user_id
-            $project = Project::firstOrCreate(
-                [
-                    'name' => $request->project,
-                    'user_id' => $userId // Ici, on associe le projet à l'utilisateur
-                ],
-                [
-                    'directory' => $request->directory ?? null,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),
-                ]
-            );
-            
+            // MODIFICATION ICI - Correction de la création du projet avec vérification explicite
+            try {
+                // Création du projet en deux étapes
+                $project = Project::where('name', $request->project)
+                    ->where('user_id', $userId)
+                    ->first();
+                    
+                if (!$project) {
+                    $project = new Project();
+                    $project->name = $request->project;
+                    $project->user_id = $userId;
+                    $project->description = 'Projet créé automatiquement';
+                    $project->environment_info = [
+                        'editor' => 'VS Code',
+                        'os' => PHP_OS,
+                    ];
+                    $project->save();
+                    
+                    Log::info('Nouveau projet créé avec succès', [
+                        'id' => $project->id,
+                        'name' => $project->name,
+                        'user_id' => $project->user_id
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Erreur lors de la création du projet', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Erreur lors de la création du projet',
+                    'message' => $e->getMessage()
+                ], 500);
+            }
+
             // Extraire le nom du fichier depuis le chemin
             $fileName = basename($request->file);
             
@@ -236,26 +267,31 @@ class ActivityController extends Controller
                 Log::debug('Aucune statistique reçue dans la requête');
             }
             
+            // Assurez-vous que l'activité est associée explicitement à l'utilisateur
+            $activity->user_id = $userId;
+            
             // Associer l'activité au projet et sauvegarder
-            $project->activities()->save($activity);
-            
-            // Log pour debug
-            Log::info('Activité enregistrée', [
-                'project' => $request->project,
-                'file' => $request->file,
-                'duration' => $request->duration,
-                'status' => $activity->activity_status
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Activité enregistrée avec succès',
-                'data' => [
-                    'status' => $activity->activity_status,
-                    'inactivity_threshold' => $this->inactivityThreshold,
-                    'inactive_gap' => $activity->inactive_gap ?? 0
-                ]
-            ]);
+            if ($project) {
+                $project->activities()->save($activity);
+                
+                Log::info('Activité enregistrée avec succès', [
+                    'project_id' => $project->id,
+                    'user_id' => $userId
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Activité enregistrée avec succès',
+                    'data' => [
+                        'status' => $activity->activity_status,
+                        'inactivity_threshold' => $this->inactivityThreshold,
+                        'inactive_gap' => $activity->inactive_gap ?? 0,
+                        'project_id' => $project->id
+                    ]
+                ]);
+            } else {
+                throw new \Exception("Le projet n'a pas pu être créé ou récupéré correctement");
+            }
             
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'enregistrement de l\'activité', [

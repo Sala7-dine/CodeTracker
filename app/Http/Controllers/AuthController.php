@@ -34,6 +34,9 @@ class AuthController extends Controller
             $user = User::create($validated);
             Auth::login($user);
             
+            // Stocker l'ID utilisateur dans la session
+            session(['auth_user_id' => $user->id]);
+            
             return redirect()->route('user.dashboard')->with('success', 'Compte créé avec succès!');
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
@@ -50,6 +53,10 @@ class AuthController extends Controller
 
         if(Auth::attempt($validated)){
             $request->session()->regenerate();
+            
+            // Stocker l'ID utilisateur dans la session
+            session(['auth_user_id' => Auth::id()]);
+            
             return redirect()->route("user.dashboard");
         }
 

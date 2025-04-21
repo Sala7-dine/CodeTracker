@@ -42,6 +42,9 @@ Route::middleware(['auth'])->group(function() {
     Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/update-image', [ProfileController::class, 'updateProfileImage'])->name('profile.update.image');
     Route::post('/profile/delete', [ProfileController::class, 'deleteAccount'])->name('profile.delete');
+    
+    // Route pour générer une clé API
+    Route::post('/profile/api-key', [ProfileController::class, 'generateApiKey'])->name('profile.api-key');
 });
 
 

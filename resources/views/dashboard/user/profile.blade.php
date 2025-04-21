@@ -3,6 +3,19 @@
 
     <!-- Main Content -->
     <main class="ml-20 p-8">
+        <!-- Ajoutez ceci dans votre fichier app.blade.php ou dans la vue profile.blade.php juste après l'ouverture de la balise main -->
+        @if(session('success'))
+            <div class="bg-green-500/20 border border-green-500/50 text-green-400 px-4 py-3 rounded relative mb-6" role="alert">
+                <span class="block sm:inline">{{ session('success') }}</span>
+                <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                    <svg class="fill-current h-6 w-6 text-green-400" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <title>Fermer</title>
+                        <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+                    </svg>
+                </span>
+            </div>
+        @endif
+
         <!-- Bannière supérieure avec avatar et présentation -->
         <div class="relative mb-10">
             <!-- Bannière décorative avec motifs géométriques -->
@@ -298,6 +311,36 @@
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <!-- Ajoutez cette section dans le formulaire de profil -->
+                    <div class="mb-4">
+                        <label for="api_key" class="block text-sm font-medium text-gray-400">Clé API pour l'extension VS Code</label>
+                        <div class="mt-1">
+                            <div class="relative">
+                                <input type="text" id="api_key" name="api_key" value="{{ $user->api_key ?? 'Aucune clé générée' }}" readonly 
+                                    class="bg-gray-700 border border-gray-600 text-white sm:text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                <button type="button" onclick="copyApiKey()" class="absolute inset-y-0 right-0 px-3 py-1.5 bg-gray-600 text-white rounded-r-lg">
+                                    Copier
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-2">
+                            <button type="button" id="generate-api-key" class="text-sm py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded">
+                                {{ $user->api_key ? 'Générer une nouvelle clé' : 'Générer une clé API' }}
+                            </button>
+                            <span id="api-key-spinner" class="ml-2 hidden">
+                                <svg class="animate-spin h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                        </div>
+                        
+                        <p class="mt-2 text-sm text-gray-400">
+                            Cette clé est nécessaire pour que l'extension VS Code puisse envoyer vos données d'activité.
+                        </p>
+                    </div>
                 </div>
                 
                 <!-- Coordonnées et localisation -->
@@ -512,6 +555,81 @@
             }
             
             return true;
+        });
+
+        // Fonction pour copier la clé API
+        function copyApiKey() {
+            const apiKeyField = document.getElementById('api_key');
+            apiKeyField.select();
+            document.execCommand('copy');
+            alert('Clé API copiée dans le presse-papier');
+        }
+
+        // Script pour générer une clé API via AJAX
+        document.getElementById('generate-api-key').addEventListener('click', function() {
+            // Afficher le spinner de chargement
+            const spinner = document.getElementById('api-key-spinner');
+            spinner.classList.remove('hidden');
+            
+            // Désactiver le bouton pendant la génération
+            this.disabled = true;
+            
+            // Récupérer le token CSRF
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            // Faire la requête AJAX
+            fetch('{{ route("profile.api-key") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la génération de la clé API');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Mettre à jour l'input avec la nouvelle clé API
+                document.getElementById('api_key').value = data.api_key;
+                
+                // Afficher un message de succès
+                const successMessage = document.createElement('div');
+                successMessage.className = 'bg-green-500/20 border border-green-500/50 text-green-400 px-4 py-3 rounded relative mt-3';
+                successMessage.innerHTML = `<span class="block">Clé API générée avec succès!</span>`;
+                document.getElementById('api_key').parentNode.parentNode.appendChild(successMessage);
+                
+                // Faire disparaître le message après 3 secondes
+                setTimeout(() => {
+                    successMessage.style.transition = 'opacity 0.5s';
+                    successMessage.style.opacity = 0;
+                    setTimeout(() => successMessage.remove(), 500);
+                }, 3000);
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                // Afficher un message d'erreur
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded relative mt-3';
+                errorMessage.innerHTML = `<span class="block">Erreur lors de la génération de la clé API</span>`;
+                document.getElementById('api_key').parentNode.parentNode.appendChild(errorMessage);
+                
+                // Faire disparaître le message après 3 secondes
+                setTimeout(() => {
+                    errorMessage.style.transition = 'opacity 0.5s';
+                    errorMessage.style.opacity = 0;
+                    setTimeout(() => errorMessage.remove(), 500);
+                }, 3000);
+            })
+            .finally(() => {
+                // Masquer le spinner et réactiver le bouton
+                spinner.classList.add('hidden');
+                this.disabled = false;
+            });
         });
     </script>
 </x-app-layout>

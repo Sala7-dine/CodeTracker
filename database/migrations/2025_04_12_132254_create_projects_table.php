@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('projects', function (Blueprint $table) {
             $table->id(); // Cela crée une colonne UNSIGNED BIGINT AUTO_INCREMENT
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('name')->unique();
+            $table->string('name');
+            $table->unique(['name', 'user_id']);
             $table->text('description')->nullable();
             $table->json('environment_info')->nullable();
             $table->timestamps();

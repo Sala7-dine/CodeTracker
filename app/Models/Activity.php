@@ -20,7 +20,8 @@ class Activity extends Model
         'language',
         'lines',
         'stats',
-        'project_id'  // Assurez-vous que cette ligne est présente
+        'project_id',  // Assurez-vous que cette ligne est présente
+        'user_id'
     ];
     
     protected $casts = [
@@ -34,6 +35,12 @@ class Activity extends Model
     {
         return $this->belongsTo(Project::class);
     }
+
+    public function user()
+{
+    return $this->belongsTo(User::class);
+}
+
     
     public function getFormattedDuration()
     {

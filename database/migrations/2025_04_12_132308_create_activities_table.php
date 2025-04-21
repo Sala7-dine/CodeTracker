@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('activities', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained()->onDelete('cascade'); // Utilise foreignId pour garantir la cohérence du type
+            $table->foreignId('user_id')->nullable()->constrained();
             $table->string('file_path');
             $table->string('file_name');
             $table->string('language')->nullable();

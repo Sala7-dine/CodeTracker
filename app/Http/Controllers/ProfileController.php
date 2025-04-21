@@ -147,4 +147,28 @@ class ProfileController extends Controller
         
         return redirect()->route('login')->with('info', 'Votre compte a été supprimé définitivement.');
     }
+
+    /**
+     * Génère une clé API pour l'utilisateur
+     */
+    public function generateApiKey(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Générer une nouvelle clé API
+        $user->api_key = \Illuminate\Support\Str::random(60);
+        $user->save();
+        
+        // Si la requête demande du JSON, retourner la clé API au format JSON
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Votre clé API a été générée avec succès.',
+                'api_key' => $user->api_key
+            ]);
+        }
+        
+        // Sinon, retourner une redirection avec un message flash
+        return redirect()->route('profile')->with('success', 'Votre clé API a été générée avec succès.');
+    }
 }

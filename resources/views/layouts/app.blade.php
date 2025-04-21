@@ -137,34 +137,54 @@
             projectsList.innerHTML = '';
             projectsList.appendChild(loadingIndicator);
             
-            // Récupérer le token CSRF pour l'authentification
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            
             fetch('/api/projects', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                     'Accept': 'application/json'
                 },
-                credentials: 'same-origin' // Important pour les requêtes authentifiées
+                credentials: 'same-origin' // Important pour les cookies
             })
             .then(response => {
+                if (response.status === 401) {
+                    throw new Error('unauthorized');
+                }
                 if (!response.ok) {
-                    throw new Error('Erreur réseau ou non autorisé');
+                    throw new Error('network_error');
                 }
                 return response.json();
             })
             .then(data => {
-                allProjects = data;
+                console.log("Données reçues:", data);
+                
+                // Si les données sont dans un format différent (avec authenticated)
+                if (data.hasOwnProperty('authenticated')) {
+                    if (!data.authenticated) {
+                        throw new Error('unauthorized');
+                    }
+                    allProjects = data.projects || [];
+                } else {
+                    // Format direct (tableau de projets)
+                    allProjects = data || [];
+                }
+                
                 renderProjects(allProjects);
             })
             .catch(error => {
-                console.error('Erreur lors du chargement des projets:', error);
+                console.error('Erreur:', error.message);
                 
-                // Vérifier si l'erreur est liée à l'authentification
-                if (error.message.includes('non autorisé') || error.message.includes('401') || error.message.includes('403')) {
-                    handleAuthError();
+                if (error.message === 'unauthorized') {
+                    projectsList.innerHTML = `
+                        <div class="text-center py-8">
+                            <i class="ph-lock text-yellow-500 text-4xl mb-3"></i>
+                            <p class="text-white font-medium">Session expirée</p>
+                            <p class="text-gray-400 mb-4">Votre session a expiré. Veuillez vous reconnecter.</p>
+                            <a href="/login" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 inline-block">
+                                Se reconnecter
+                            </a>
+                        </div>
+                    `;
                 } else {
                     projectsList.innerHTML = `
                         <div class="text-center py-8">

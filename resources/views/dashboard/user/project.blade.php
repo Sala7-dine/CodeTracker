@@ -786,6 +786,7 @@
         
         // Graphique de productivité (ligne)
         const createProductivityChart = () => {
+
             const ctx = document.getElementById('productivityChart');
             if (!ctx) {
                 console.error("Canvas 'productivityChart' introuvable");
@@ -867,6 +868,7 @@
             }
             
             new Chart(ctx, {
+
                 type: 'line',
                 data: {
                     labels: days,
@@ -924,10 +926,13 @@
                             }
                         }
                     }
-                });
-            });
+                }
+                
+            })
+
         };
-        
+    
+
         // Graphique d'activité par heure (heatmap)
         const createActivityHeatmap = () => {
             const ctx = document.getElementById('activityHeatmapChart');

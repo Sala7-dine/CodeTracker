@@ -37,6 +37,7 @@ Route::middleware(['auth'])->group(function() {
     Route::get('/user/dashboard', [ControllersDashboardController::class, 'index'])->name('user.dashboard');
     Route::get('/dashboard/projects', [ProjetController::class, 'projects'])->name('user.dashboard.projects');
     Route::get('/dashboard/project/{id}', [ProjetController::class, 'project'])->name('user.dashboard.project');
+    Route::get('/dashboard/project/{id}/export', [ProjetController::class, 'exportPdf'])->name('user.dashboard.project.export');
     Route::get('/dashboard/profile', [UserController::class, 'profile'])->name('profile');
 
     // Routes pour le profil

@@ -8,6 +8,9 @@ use App\Models\Language;
 use App\Models\Activity;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\DB; // Ajoutez cet import
 
 class ProjetController extends Controller
 {
@@ -375,5 +378,70 @@ class ProjetController extends Controller
         ];
         
         return $months[$monthNumber] ?? '';
+    }
+
+    /**
+     * Exporte les données du projet en PDF
+     */
+    public function exportPdf($id)
+    {
+        $project = Project::findOrFail($id);
+        
+        // Vérifier que l'utilisateur est propriétaire du projet
+        if ($project->user_id !== auth()->id()) {
+            return abort(403);
+        }
+        
+        // Récupérer les données nécessaires pour le PDF
+        $activities = Activity::where('project_id', $project->id)
+                              ->orderBy('created_at', 'desc')
+                              ->take(50)
+                              ->get();
+        
+        $formattedTime = \App\Models\Language::formatTime($project->getTotalTime());
+        
+        // Calculer des statistiques pour le PDF
+        $totalHours = round($project->getTotalTime() / 3600000, 1); // Convertir en heures
+        $totalFiles = $project->getTotalFiles();
+        $totalLines = $project->getTotalLines();
+        
+        $languages = $project->languages()
+                            ->orderBy('time_ms', 'desc')
+                            ->get();
+        
+        // Calculer les activités par jour de la semaine
+        $activityByDay = Activity::where('project_id', $project->id)
+                                 ->select(DB::raw('DAYNAME(created_at) as day'), DB::raw('SUM(duration)/3600 as hours'))
+                                 ->groupBy('day')
+                                 ->orderBy(DB::raw('DAYOFWEEK(created_at)'))
+                                 ->get()
+                                 ->pluck('hours', 'day')
+                                 ->toArray();
+        
+        $daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $activityData = [];
+        
+        foreach ($daysOfWeek as $day) {
+            $activityData[$day] = isset($activityByDay[$day]) ? round($activityByDay[$day], 1) : 0;
+        }
+        
+        // Générer le PDF avec la vue
+        $pdf = PDF::loadView('exports.project-pdf', [
+            'project' => $project,
+            'activities' => $activities,
+            'formattedTime' => $formattedTime,
+            'totalHours' => $totalHours,
+            'totalFiles' => $totalFiles,
+            'totalLines' => $totalLines,
+            'languages' => $languages,
+            'activityData' => $activityData,
+            'exportDate' => Carbon::now()->format('d/m/Y H:i'),
+        ]);
+        
+        // Définir quelques options pour le PDF
+        $pdf->setPaper('a4');
+        
+        // Télécharger le PDF avec un nom personnalisé
+        return $pdf->download($project->name . '_stats_' . Carbon::now()->format('Y-m-d') . '.pdf');
     }
 }

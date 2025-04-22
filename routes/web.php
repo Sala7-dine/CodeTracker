@@ -4,11 +4,13 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController as ControllersDashboardController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjetController;
+use App\Http\Controllers\StatistiqueController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
 
 Route::post("/logout" , [AuthController::class , 'logout'])->name("logout");
 
@@ -45,6 +47,9 @@ Route::middleware(['auth'])->group(function() {
     
     // Route pour générer une clé API
     Route::post('/profile/api-key', [ProfileController::class, 'generateApiKey'])->name('profile.api-key');
+
+    Route::get('/user/dashboard/statistiques' , [StatistiqueController::class, "index"])->name("user.dashboard.statistiques");
+
 });
 
 

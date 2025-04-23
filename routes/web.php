@@ -15,8 +15,10 @@ use Illuminate\Support\Facades\Route;
 Route::post("/logout" , [AuthController::class , 'logout'])->name("logout");
 
 Route::get('/', function () {
-    if (Auth::check()) {
+    if (Auth::check() && Auth::user()->role === 'user') {
         return redirect()->route('user.dashboard');
+    }else if(Auth::check() && Auth::user()->role === 'admin'){
+        return redirect()->route('admin.dashboard');
     }
     return app(UserController::class)->home();
 })->name("home");

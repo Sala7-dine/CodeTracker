@@ -46,6 +46,7 @@ class AuthController extends Controller
 
 
     public function login(Request $request){
+
         $validated = $request->validate([
             "email" => 'required|email',
             "password" => 'required|string'
@@ -65,7 +66,11 @@ class AuthController extends Controller
             // Stocker l'ID utilisateur dans la session
             session(['auth_user_id' => Auth::id()]);
             
-            return redirect()->route("user.dashboard");
+            if(Auth::user()->role === 'user'){
+                return redirect()->route("user.dashboard");
+            }else if (Auth::user()->role === 'admin') {
+                return redirect()->route("admin.dashboard");
+            }
         }
 
         return back()->withErrors([

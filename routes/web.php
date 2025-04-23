@@ -56,8 +56,12 @@ Route::middleware(['auth'])->group(function() {
 
 // Routes administrateur
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Routes existantes
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    
+    // Routes de gestion des utilisateurs
     Route::get('/users', [AdminController::class, 'users'])->name('users');
+    Route::get('/users/{id}', [AdminController::class, 'showUser'])->name('users.show');
     Route::put('/users/{id}/toggle-status', [AdminController::class, 'toggleUserStatus'])->name('users.toggleStatus');
     Route::put('/users/{id}/change-role', [AdminController::class, 'changeUserRole'])->name('users.changeRole');
     Route::delete('/users/{id}', [AdminController::class, 'deleteUser'])->name('users.delete');

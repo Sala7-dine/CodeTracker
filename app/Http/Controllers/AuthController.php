@@ -31,6 +31,7 @@ class AuthController extends Controller
                 "password" => 'required|string|min:8|confirmed'
             ]);
 
+            // dd($validated);
             $user = User::create($validated);
             Auth::login($user);
             
@@ -45,11 +46,18 @@ class AuthController extends Controller
 
 
     public function login(Request $request){
-
         $validated = $request->validate([
             "email" => 'required|email',
             "password" => 'required|string'
         ]);
+
+        // Vérifier si l'utilisateur existe et est actif avant la tentative d'authentification
+        $user = User::where('email', $validated['email'])->first();
+        if ($user && !$user->is_active) {
+            return back()->withErrors([
+                'error' => 'Votre compte a été désactivé par l\'administrateur. Pour plus d\'informations, veuillez nous contacter.'
+            ])->withInput($request->only('email'));
+        }
 
         if(Auth::attempt($validated)){
             $request->session()->regenerate();

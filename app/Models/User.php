@@ -18,9 +18,19 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'firstname',
+        'lastname',
+        'username',
+        'bio',
+        'profile_image',
+        'phone',
+        'website',
+        'country',
+        'city',
+        'preferences',
         'email',
         'password',
+        'api_key',
         'role',
         'is_active'
     ];
@@ -67,5 +77,32 @@ class User extends Authenticatable
     public function isActive()
     {
         return $this->is_active;
+    }
+
+    /**
+     * Get the user's profile image URL.
+     */
+    public function getProfileImageUrlAttribute()
+    {
+        if ($this->profile_image) {
+            return asset('storage/' . $this->profile_image);
+        }
+        
+        // Utilisez les initiales pour l'avatar par défaut
+        $name = $this->firstname . ' ' . $this->lastname;
+        return "https://ui-avatars.com/api/?name=" . urlencode($name) . "&color=ffffff&background=6366f1&size=150";
+    }
+
+    /**
+     * Automatically hash the password when it's being set
+     *
+     * @param string $value
+     * @return void
+     */
+    public function setPasswordAttribute($value)
+    {
+        if ($value) {
+            $this->attributes['password'] = bcrypt($value);
+        }
     }
 }

@@ -1,6 +1,20 @@
 <!-- filepath: c:\Users\LENOVO\Herd\CodeTracker\resources\views\auth\login.blade.php -->
 <x-guest-layout>
     <div class="w-full max-w-md mx-auto">
+        <!-- Ajouter ce code juste après la balise d'ouverture de la div principale -->
+        @if(session('error'))
+            <div class="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-6 relative" role="alert" 
+                 x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 10000)">
+                <div class="flex items-center">
+                    <i class="ph-x-circle text-xl mr-2"></i>
+                    <span>{{ session('error') }}</span>
+                </div>
+                <button @click="show = false" class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                    <i class="ph-x-circle text-red-400"></i>
+                </button>
+            </div>
+        @endif
+
         <!-- Card de connexion avec effet de profondeur -->
         <div class="bg-gray-800/60 backdrop-blur-xl p-8 rounded-2xl border border-gray-700 shadow-2xl relative overflow-hidden">
             <!-- Élément décoratif -->

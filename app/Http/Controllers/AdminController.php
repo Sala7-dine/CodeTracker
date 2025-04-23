@@ -118,11 +118,17 @@ class AdminController extends Controller
     public function toggleUserStatus(Request $request, $id)
     {
         $user = User::findOrFail($id);
+        
+        // Empêcher le blocage du compte administrateur principal
+        if ($user->role === 'admin' && $user->id === 1) {
+            return redirect()->back()->with('error', 'Impossible de bloquer le compte administrateur principal.');
+        }
+        
         $user->is_active = !$user->is_active;
         $user->save();
         
-        return redirect()->back()->with('success', 
-            $user->is_active ? 'Utilisateur débloqué avec succès.' : 'Utilisateur bloqué avec succès.');
+        $message = $user->is_active ? 'Utilisateur débloqué avec succès.' : 'Utilisateur bloqué avec succès.';
+        return redirect()->back()->with('success', $message);
     }
     
     /**
@@ -136,6 +142,11 @@ class AdminController extends Controller
         
         $user = User::findOrFail($id);
         
+        // Empêcher la modification du rôle de l'administrateur principal
+        if ($user->id === 1) {
+            return redirect()->back()->with('error', 'Impossible de modifier le rôle de l\'administrateur principal.');
+        }
+        
         // Validation pour éviter de supprimer tous les admin
         if ($user->role == 'admin' && $request->role != 'admin') {
             $adminCount = User::where('role', 'admin')->count();
@@ -147,7 +158,7 @@ class AdminController extends Controller
         $user->role = $request->role;
         $user->save();
         
-        return redirect()->back()->with('success', "Rôle de l'utilisateur modifié avec succès.");
+        return redirect()->back()->with('success', "Le rôle de l'utilisateur a été modifié avec succès.");
     }
     
     /**
@@ -157,6 +168,11 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
         
+        // Empêcher la suppression de l'administrateur principal
+        if ($user->id === 1) {
+            return redirect()->back()->with('error', 'Impossible de supprimer l\'administrateur principal.');
+        }
+        
         // Validation pour éviter de supprimer le dernier admin
         if ($user->role == 'admin') {
             $adminCount = User::where('role', 'admin')->count();
@@ -165,14 +181,73 @@ class AdminController extends Controller
             }
         }
         
-        // Suppression des projets associés à l'utilisateur
-        // Note: Il pourrait être préférable d'avoir un processus plus sophistiqué 
-        // pour archiver ou transférer les projets avant suppression
-        $user->projects()->delete();
+        // Sauvegarde des informations pour le log d'audit
+        $userData = [
+            'name' => $user->name,
+            'email' => $user->email,
+            'deleted_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            'deleted_by' => auth()->id()
+        ];
         
-        // Supprimer l'utilisateur
-        $user->delete();
+        DB::beginTransaction();
+        try {
+            // Supprimer ou anonymiser les projets selon votre politique
+            foreach ($user->projects as $project) {
+                // Option 1: Supprimer complètement
+                $project->activities()->delete();
+                $project->languages()->delete();
+                $project->delete();
+                
+                // Option 2: Marquer comme supprimés mais conserver pour statistiques
+                // $project->update(['user_id' => null, 'status' => 'deleted']);
+            }
+            
+            // Supprimer l'utilisateur
+            $user->delete();
+            
+            // Log d'audit (optionnel)
+            DB::table('audit_logs')->insert([
+                'action' => 'user_deleted',
+                'data' => json_encode($userData),
+                'created_at' => Carbon::now(),
+                'user_id' => auth()->id()
+            ]);
+            
+            DB::commit();
+            return redirect()->route('admin.users')->with('success', 'L\'utilisateur et tous ses projets ont été supprimés avec succès.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Une erreur est survenue lors de la suppression : ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Affiche les détails d'un utilisateur
+     */
+    public function showUser($id)
+    {
+        $user = User::with(['projects' => function($query) {
+            $query->withCount(['activities', 'languages']);
+        }])->findOrFail($id);
         
-        return redirect()->route('admin.users')->with('success', 'Utilisateur supprimé avec succès.');
+        // Calcul des statistiques de l'utilisateur
+        $totalCodingTime = 0;
+        $totalLines = 0;
+        
+        foreach ($user->projects as $project) {
+            $totalCodingTime += $project->getTotalTime();
+            $totalLines += $project->getTotalLines();
+        }
+        
+        $userStats = [
+            'totalProjects' => $user->projects->count(),
+            'totalCodingTime' => \App\Models\Language::formatTime($totalCodingTime),
+            'totalLines' => $totalLines,
+            'memberSince' => $user->created_at->diffForHumans(),
+            'lastActive' => $user->updated_at->diffForHumans()
+        ];
+        
+        return view('dashboard.admin.user-details', compact('user', 'userStats'));
     }
 }

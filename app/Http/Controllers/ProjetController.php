@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\DB; // Ajoutez cet import
+use Illuminate\Support\Facades\DB; 
 
 class ProjetController extends Controller
 {

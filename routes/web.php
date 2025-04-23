@@ -54,10 +54,13 @@ Route::middleware(['auth'])->group(function() {
 });
 
 
-Route::middleware('auth')->controller(AdminController::class)->group( function(){
-
-    Route::get("/admin/dashboard" , "index")->name('admin.dashboard');
-
+// Routes administrateur
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    Route::get('/users', [AdminController::class, 'users'])->name('users');
+    Route::put('/users/{id}/toggle-status', [AdminController::class, 'toggleUserStatus'])->name('users.toggleStatus');
+    Route::put('/users/{id}/change-role', [AdminController::class, 'changeUserRole'])->name('users.changeRole');
+    Route::delete('/users/{id}', [AdminController::class, 'deleteUser'])->name('users.delete');
 });
 
 

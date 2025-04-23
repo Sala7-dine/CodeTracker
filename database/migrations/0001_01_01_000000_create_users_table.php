@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('api_key', 60)->nullable();
             $table->enum('role', ['user', 'admin'])->default('user');
+            $table->boolean('is_active')->default(true);
             $table->rememberToken();
             $table->timestamps();
         });

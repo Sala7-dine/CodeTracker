@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -18,19 +18,11 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'firstname',
-        'lastname',
+        'name',
         'email',
         'password',
-        'username',
-        'bio',
-        'phone',
-        'website',
-        'country',
-        'city',
-        'profile_image',
-        'preferences',
-        'api_key', // Ajoutez cette ligne
+        'role',
+        'is_active'
     ];
 
     /**
@@ -50,37 +42,30 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'preferences' => 'array',
+        'is_active' => 'boolean',
     ];
-
+    
     /**
-     * Get the user's projects.
+     * Get the projects for the user.
      */
     public function projects()
     {
         return $this->hasMany(Project::class);
     }
-
+    
     /**
-     * Get the user's full name.
+     * Determine if the user is an admin.
      */
-    public function getFullNameAttribute()
+    public function isAdmin()
     {
-        return "{$this->firstname} {$this->lastname}";
+        return $this->role === 'admin';
     }
-
+    
     /**
-     * Get the URL of the user's profile image.
+     * Determine if the user account is active.
      */
-    public function getProfileImageUrlAttribute()
+    public function isActive()
     {
-        if ($this->profile_image) {
-            return Storage::url($this->profile_image);
-        }
-        
-        // Generate an avatar image with initials
-        $name = $this->firstname . ' ' . $this->lastname;
-        return "https://ui-avatars.com/api/?name=" . urlencode($name) . "&background=6366f1&color=fff&size=256";
+        return $this->is_active;
     }
 }

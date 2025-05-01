@@ -48,7 +48,6 @@ Route::middleware(['auth'])->group(function() {
     Route::post('/profile/update-image', [ProfileController::class, 'updateProfileImage'])->name('profile.update.image');
     Route::post('/profile/delete', [ProfileController::class, 'deleteAccount'])->name('profile.delete');
     
-    // Route pour générer une clé API
     Route::post('/profile/api-key', [ProfileController::class, 'generateApiKey'])->name('profile.api-key');
 
     Route::get('/user/dashboard/statistiques' , [StatistiqueController::class, "index"])->name("user.dashboard.statistiques");
@@ -58,7 +57,7 @@ Route::middleware(['auth'])->group(function() {
 
 // Routes administrateur
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Routes existantes
+
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     
     // Routes de gestion des utilisateurs
@@ -68,11 +67,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/users/{id}/change-role', [AdminController::class, 'changeUserRole'])->name('users.changeRole');
     Route::delete('/users/{id}', [AdminController::class, 'deleteUser'])->name('users.delete');
 });
-
-
-// Route::get('/', function () {
-//     return redirect()->route('dashboard');
-// });
 
 
 

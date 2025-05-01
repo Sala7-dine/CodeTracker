@@ -53,7 +53,7 @@
             </div>
             
             <!-- Profil et actions principales -->
-            <div class="flex justify-between items-end -mt-12 px-8">
+            <div class="flex justify-between items-end -mt-8 px-8">
                 <div class="flex items-end">
                     <div class="relative group mr-6">
                         <form action="{{ route('profile.update.image') }}" method="POST" enctype="multipart/form-data" id="profile-image-form">
@@ -81,7 +81,7 @@
                     
                     <div>
                         <div class="flex items-center">
-                            <h1 class="text-2xl font-bold text-white">{{ $user->firstname ?? 'John' }} {{ $user->lastname ?? 'Doe' }}</h1>
+                            <h1 class="text-2xl font-bold text-white">{{ $user->firstname ?? 'Prénom' }} {{ $user->lastname ?? 'Nom' }}</h1>
                             <span class="ml-3 px-2 py-1 rounded-full text-xs bg-indigo-500/20 text-indigo-300 flex items-center">
                                 <i class="ph-check-circle text-xs mr-1"></i>
                                 {{ isset($user->role) && $user->role == 'admin' ? 'Admin' : 'Pro' }}

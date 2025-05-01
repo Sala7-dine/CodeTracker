@@ -21,14 +21,14 @@
                             <label for="firstname" class="block text-gray-400 text-sm font-medium mb-1">Prénom</label>
                             <div class="relative group">
                                 <i class="ph-user-circle-bold absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-400 transition-colors"></i>
-                                <input id="firstname" value="{{ old('firstname') }}" name="firstname" type="text" class="w-full bg-gray-700/50 border {{ $errors->has('firstname') ? 'border-red-500' : 'border-gray-600' }} rounded-lg py-3 pl-9 pr-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="John" required>
+                                <input id="firstname" value="{{ old('firstname') }}" name="firstname" type="text" class="w-full bg-gray-700/50 border {{ $errors->has('firstname') ? 'border-red-500' : 'border-gray-600' }} rounded-lg py-3 pl-9 pr-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="saisé votre prenom" required>
                             </div>
                         </div>
                         <div>
                             <label for="lastname" class="block text-gray-400 text-sm font-medium mb-1">Nom</label>
                             <div class="relative group">
                                 <i class="ph-identification-badge-bold absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-400 transition-colors"></i>
-                                <input id="lastname" value="{{ old('lastname') }}" name="lastname" type="text" class="w-full bg-gray-700/50 border {{ $errors->has('lastname') ? 'border-red-500' : 'border-gray-600' }} rounded-lg py-3 pl-9 pr-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Doe" required>
+                                <input id="lastname" value="{{ old('lastname') }}" name="lastname" type="text" class="w-full bg-gray-700/50 border {{ $errors->has('lastname') ? 'border-red-500' : 'border-gray-600' }} rounded-lg py-3 pl-9 pr-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="saisié votre nom" required>
                             </div>
                         </div>
                     </div>

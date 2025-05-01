@@ -11,23 +11,21 @@ use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
-    /**
-     * Affiche la page de profil de l'utilisateur
-     */
+    
+    
     public function index()
     {
         $user = Auth::user();
         return view('dashboard.user.profile', compact('user'));
     }
 
-    /**
-     * Met à jour toutes les informations du profil
-     */
+   
+    
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
         
-        // Règles de validation de base 
+
         $rules = [
             'firstname' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',
@@ -51,7 +49,7 @@ class ProfileController extends Controller
             'city' => 'nullable|string|max:100',
         ];
         
-        // Ajouter les règles pour le mot de passe si fourni
+
         if ($request->filled('current_password')) {
             $rules['current_password'] = 'required|current_password';
             $rules['new_password'] = 'required|string|min:8|confirmed';
@@ -59,7 +57,7 @@ class ProfileController extends Controller
         
         $validated = $request->validate($rules);
         
-        // 1. Mise à jour des informations personnelles
+
         $user->firstname = $validated['firstname'];
         $user->lastname = $validated['lastname'];
         $user->email = $validated['email'];
@@ -74,12 +72,12 @@ class ProfileController extends Controller
         $user->country = $validated['country'] ?? null;
         $user->city = $validated['city'] ?? null;
         
-        // 2. Mise à jour du mot de passe si fourni
+
         if ($request->filled('current_password') && isset($validated['new_password'])) {
             $user->password = Hash::make($validated['new_password']);
         }
         
-        // 3. Mise à jour des préférences
+
         $preferences = $user->preferences ?? [];
         $notifications = $preferences['notifications'] ?? [];
         
@@ -94,15 +92,11 @@ class ProfileController extends Controller
         
         $user->preferences = $preferences;
         
-        // Enregistrer les modifications
         $user->save();
         
         return redirect()->route('profile')->with('success', 'Profil mis à jour avec succès!');
     }
 
-    /**
-     * Met à jour l'image de profil
-     */
     public function updateProfileImage(Request $request)
     {
         $request->validate([
@@ -111,34 +105,31 @@ class ProfileController extends Controller
         
         $user = Auth::user();
         
-        // Supprimer l'ancienne image si elle existe
+
         if ($user->profile_image && Storage::disk('public')->exists($user->profile_image)) {
             Storage::disk('public')->delete($user->profile_image);
         }
         
-        // Stocker la nouvelle image
+
         $path = $request->file('profile_image')->store('profile-images', 'public');
         
-        // Mettre à jour le chemin de l'image
+
         $user->profile_image = $path;
         $user->save();
         
         return redirect()->route('profile')->with('success', 'Photo de profil mise à jour avec succès!');
     }
     
-    /**
-     * Supprime le compte utilisateur
-     */
     public function deleteAccount(Request $request)
     {
         $user = Auth::user();
         
-        // Supprimer l'image de profil
+
         if ($user->profile_image && Storage::disk('public')->exists($user->profile_image)) {
             Storage::disk('public')->delete($user->profile_image);
         }
         
-        // Supprimer l'utilisateur
+
         $user->delete();
         
         Auth::logout();
@@ -148,18 +139,16 @@ class ProfileController extends Controller
         return redirect()->route('login')->with('info', 'Votre compte a été supprimé définitivement.');
     }
 
-    /**
-     * Génère une clé API pour l'utilisateur
-     */
+  
     public function generateApiKey(Request $request)
     {
         $user = Auth::user();
         
-        // Générer une nouvelle clé API
+
         $user->api_key = \Illuminate\Support\Str::random(60);
         $user->save();
         
-        // Si la requête demande du JSON, retourner la clé API au format JSON
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -168,7 +157,6 @@ class ProfileController extends Controller
             ]);
         }
         
-        // Sinon, retourner une redirection avec un message flash
         return redirect()->route('profile')->with('success', 'Votre clé API a été générée avec succès.');
     }
 }

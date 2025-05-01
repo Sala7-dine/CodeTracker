@@ -14,25 +14,20 @@ class AdminController extends Controller
 {
     public function index()
     {
-        // Statistiques générales
         $totalUsers = User::count();
         $newUsersToday = User::whereDate('created_at', Carbon::today())->count();
         
         $totalProjects = Project::count();
         $newProjectsThisWeek = Project::whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()])->count();
         
-        // Calculer l'espace de stockage utilisé (en supposant que vous stockez des fichiers)
         $storageUsed = $this->calculateStorageUsage();
         
-        // Charge serveur simulée (dans un vrai système, vous pourriez obtenir cela via une API système)
-        $serverLoad = rand(15, 85); // Simulation
+        $serverLoad = rand(15, 85); 
         
-        // Récupérer les utilisateurs récents
         $recentUsers = User::orderBy('created_at', 'desc')
                         ->take(5)
                         ->get();
         
-        // Récupérer des logs système récents (simulation)
         $systemLogs = $this->getSystemLogs();
         
         return view("dashboard.admin.index", compact(
@@ -47,31 +42,22 @@ class AdminController extends Controller
         ));
     }
     
-    /**
-     * Calcule l'espace de stockage utilisé
-     */
+   
     private function calculateStorageUsage()
     {
-        // Récupérer la taille de toutes les activités (en supposant qu'elles sont stockées)
         $activitiesCount = Activity::count();
         
-        // Estimation simulée - dans un système réel, on calculerait l'espace disque réel utilisé
-        $estimatedSize = $activitiesCount * 0.02; // Supposons 20 KB par activité en moyenne
+        $estimatedSize = $activitiesCount * 0.02; 
         
         return [
-            'used' => round($estimatedSize, 1), // GB
-            'total' => 100, // GB (limite supposée)
+            'used' => round($estimatedSize, 1),
+            'total' => 100, 
             'percentage' => min(100, round(($estimatedSize / 100) * 100, 1))
         ];
     }
     
-    /**
-     * Récupère les logs système récents
-     */
     private function getSystemLogs()
     {
-        // Dans un système réel, vous pourriez récupérer des logs réels de la base de données
-        // Ici nous simulons quelques logs
         return [
             [
                 'timestamp' => Carbon::now()->subMinutes(5)->format('Y-m-d H:i'),
@@ -100,9 +86,7 @@ class AdminController extends Controller
         ];
     }
     
-    /**
-     * Affiche la liste des utilisateurs
-     */
+    
     public function users()
     {
         $users = User::withCount('projects')
@@ -112,14 +96,11 @@ class AdminController extends Controller
         return view('dashboard.admin.users', compact('users'));
     }
     
-    /**
-     * Bloque/débloque un utilisateur
-     */
+  
     public function toggleUserStatus(Request $request, $id)
     {
         $user = User::findOrFail($id);
         
-        // Empêcher le blocage du compte administrateur principal
         if ($user->role === 'admin' && $user->id === 1) {
             return redirect()->back()->with('error', 'Impossible de bloquer le compte administrateur principal.');
         }
@@ -131,9 +112,7 @@ class AdminController extends Controller
         return redirect()->back()->with('success', $message);
     }
     
-    /**
-     * Change le rôle d'un utilisateur
-     */
+
     public function changeUserRole(Request $request, $id)
     {
         $request->validate([
@@ -142,12 +121,10 @@ class AdminController extends Controller
         
         $user = User::findOrFail($id);
         
-        // Empêcher la modification du rôle de l'administrateur principal
         if ($user->id === 1) {
             return redirect()->back()->with('error', 'Impossible de modifier le rôle de l\'administrateur principal.');
         }
         
-        // Validation pour éviter de supprimer tous les admin
         if ($user->role == 'admin' && $request->role != 'admin') {
             $adminCount = User::where('role', 'admin')->count();
             if ($adminCount <= 1) {
@@ -161,19 +138,15 @@ class AdminController extends Controller
         return redirect()->back()->with('success', "Le rôle de l'utilisateur a été modifié avec succès.");
     }
     
-    /**
-     * Supprime un utilisateur
-     */
+    
     public function deleteUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
         
-        // Empêcher la suppression de l'administrateur principal
         if ($user->id === 1) {
             return redirect()->back()->with('error', 'Impossible de supprimer l\'administrateur principal.');
         }
         
-        // Validation pour éviter de supprimer le dernier admin
         if ($user->role == 'admin') {
             $adminCount = User::where('role', 'admin')->count();
             if ($adminCount <= 1) {
@@ -181,7 +154,6 @@ class AdminController extends Controller
             }
         }
         
-        // Sauvegarde des informations pour le log d'audit
         $userData = [
             'name' => $user->name,
             'email' => $user->email,
@@ -191,21 +163,16 @@ class AdminController extends Controller
         
         DB::beginTransaction();
         try {
-            // Supprimer ou anonymiser les projets selon votre politique
             foreach ($user->projects as $project) {
-                // Option 1: Supprimer complètement
+
                 $project->activities()->delete();
                 $project->languages()->delete();
                 $project->delete();
                 
-                // Option 2: Marquer comme supprimés mais conserver pour statistiques
-                // $project->update(['user_id' => null, 'status' => 'deleted']);
             }
             
-            // Supprimer l'utilisateur
             $user->delete();
             
-            // Log d'audit (optionnel)
             DB::table('audit_logs')->insert([
                 'action' => 'user_deleted',
                 'data' => json_encode($userData),
@@ -222,16 +189,13 @@ class AdminController extends Controller
         }
     }
     
-    /**
-     * Affiche les détails d'un utilisateur
-     */
+   
     public function showUser($id)
     {
         $user = User::with(['projects' => function($query) {
             $query->withCount(['activities', 'languages']);
         }])->findOrFail($id);
         
-        // Calcul des statistiques de l'utilisateur
         $totalCodingTime = 0;
         $totalLines = 0;
         

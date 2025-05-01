@@ -35,8 +35,7 @@ class AuthController extends Controller
             $user = User::create($validated);
             Auth::login($user);
             
-            // Stocker l'ID utilisateur dans la session
-            session(['auth_user_id' => $user->id]);
+            // session(['auth_user_id' => $user->id]);
             
             return redirect()->route('user.dashboard')->with('success', 'Compte créé avec succès!');
         } catch (ValidationException $e) {
@@ -52,7 +51,6 @@ class AuthController extends Controller
             "password" => 'required|string'
         ]);
 
-        // Vérifier si l'utilisateur existe et est actif avant la tentative d'authentification
         $user = User::where('email', $validated['email'])->first();
         if ($user && !$user->is_active) {
             return back()->withErrors([
@@ -63,8 +61,7 @@ class AuthController extends Controller
         if(Auth::attempt($validated)){
             $request->session()->regenerate();
             
-            // Stocker l'ID utilisateur dans la session
-            session(['auth_user_id' => Auth::id()]);
+            // session(['auth_user_id' => Auth::id()]);
             
             if(Auth::user()->role === 'user'){
                 return redirect()->route("user.dashboard");

@@ -14,13 +14,10 @@ class StatistiqueController extends Controller
 {
     public function index(Request $request)
     {
-        // Récupérer l'utilisateur connecté
         $user = Auth::user();
         
-        // Déterminer la période de filtrage (par défaut 'all')
         $period = $request->period ?? 'all';
         
-        // Définir les plages de dates en fonction de la période
         $startDate = null;
         $endDate = Carbon::now();
         
@@ -30,7 +27,6 @@ class StatistiqueController extends Controller
             $startDate = Carbon::now()->subMonth()->startOfDay();
         }
         
-        // Récupérer tous les projets de l'utilisateur
         $projects = Project::where('user_id', $user->id)
                           ->when($startDate, function ($query) use ($startDate) {
                               return $query->where('updated_at', '>=', $startDate);
@@ -38,26 +34,21 @@ class StatistiqueController extends Controller
                           ->withCount(['activities as activity_count'])
                           ->get();
         
-        // 1. Statistiques globales
         $totalTime = 0;
         $totalLines = 0;
         $activeProjects = count($projects);
         
-        // Pour les statistiques globales (sans filtre de date), utiliser les méthodes de modèle
         if ($period == 'all') {
-            // Si on affiche toutes les données, utiliser les statistiques globales
             foreach ($projects as $project) {
                 $totalTime += $project->getTotalTime();
                 $totalLines += $project->getTotalLines();
             }
         } else {
-            // Sinon, calculer les statistiques pour la période filtrée
             foreach ($projects as $project) {
                 // Temps total sur ce projet dans la période
                 $projectTime = $this->getProjectTotalTime($project->id, $startDate, $endDate);
                 $totalTime += $projectTime;
                 
-                // Lignes de code (cette partie pourrait être améliorée pour tenir compte du filtre temporel)
                 $projectLines = Language::where('project_id', $project->id)
                     ->when($startDate, function($query) use ($startDate) {
                         return $query->where('updated_at', '>=', $startDate);
@@ -109,24 +100,19 @@ class StatistiqueController extends Controller
         ));
     }
     
-    /**
-     * Récupère le temps total passé sur un projet
-     */
+  
     private function getProjectTotalTime($projectId, $startDate = null, $endDate = null)
     {
-        // Récupérer le projet directement
         $project = Project::find($projectId);
         
         if (!$project) {
             return 0;
         }
         
-        // Si pas de filtre de date, retourner le temps total du projet
         if (!$startDate) {
             return $project->getTotalTime();
         }
         
-        // Sinon, calculer le temps pour la période demandée
         return Activity::where('project_id', $projectId)
             ->when($startDate, function ($query) use ($startDate) {
                 return $query->where('created_at', '>=', $startDate);
@@ -137,17 +123,13 @@ class StatistiqueController extends Controller
             ->sum('duration') * 1000; // Conversion en millisecondes
     }
     
-    /**
-     * Calcule la moyenne quotidienne d'heures de codage
-     */
+  
     private function calculateDailyAverage($userId, $startDate = null, $endDate = null)
     {
-        // Si pas de date de début, prendre les 30 derniers jours
         if (!$startDate) {
             $startDate = Carbon::now()->subDays(30)->startOfDay();
         }
         
-        // Récupérer les activités par jour
         $dailyActivities = Activity::whereHas('project', function($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
@@ -159,7 +141,6 @@ class StatistiqueController extends Controller
             ->groupBy('date')
             ->get();
         
-        // Calculer la moyenne uniquement pour les jours avec activité
         $totalHours = $dailyActivities->sum('hours');
         $activeDays = $dailyActivities->count();
         
@@ -169,12 +150,9 @@ class StatistiqueController extends Controller
         return $avgHours;
     }
     
-    /**
-     * Récupère les heures de code par jour de la semaine
-     */
+    
     private function getActivityByDayOfWeek($userId, $startDate = null, $endDate = null)
     {
-        // Récupérer les activités et les grouper par jour de la semaine
         $activities = Activity::whereHas('project', function($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
@@ -191,15 +169,12 @@ class StatistiqueController extends Controller
             ->groupBy('day_of_week')
             ->get();
         
-        // Initialiser le tableau avec des zéros pour chaque jour
         $result = [
             'labels' => ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
             'data' => [0, 0, 0, 0, 0, 0, 0]
         ];
         
-        // Remplir les données
         foreach ($activities as $activity) {
-            // Dans MySQL, DAYOFWEEK() retourne 1 pour dimanche, 2 pour lundi, etc.
             $index = $activity->day_of_week - 1; // Ajuster pour notre tableau 0-indexé
             $result['data'][$index] = round($activity->hours, 1);
         }
@@ -207,12 +182,8 @@ class StatistiqueController extends Controller
         return $result;
     }
     
-    /**
-     * Récupère la répartition du temps par langage de programmation
-     */
     private function getLanguageDistribution($userId, $startDate = null, $endDate = null)
     {
-        // Récupérer tous les langages utilisés dans les projets de l'utilisateur
         $languages = Language::whereHas('project', function($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
@@ -233,7 +204,6 @@ class StatistiqueController extends Controller
             'details' => []
         ];
         
-        // Palette de couleurs pour les langages courants
         $colorMap = [
             'javascript' => '#f59e0b', // amber-500
             'js' => '#f59e0b',
@@ -254,7 +224,6 @@ class StatistiqueController extends Controller
             'scala' => '#be123c', // rose-700
         ];
         
-        // Définir une valeur minimale pour afficher "Autres"
         $otherThreshold = 0.03; // 3%
         $otherLanguages = [
             'name' => 'Autres',
@@ -267,7 +236,6 @@ class StatistiqueController extends Controller
             $langName = $language->name;
             $percentage = $totalTime > 0 ? ($language->total_time / $totalTime) * 100 : 0;
             
-            // Si le pourcentage est en dessous du seuil, ajouter aux "Autres"
             if ($percentage < $otherThreshold * 100) {
                 $otherLanguages['total_time'] += $language->total_time;
                 $otherLanguages['total_lines'] += $language->total_lines;
@@ -278,9 +246,8 @@ class StatistiqueController extends Controller
             $result['labels'][] = $langName;
             $result['data'][] = round($percentage, 1);
             
-            // Déterminer la couleur du langage
             $langKey = strtolower($langName);
-            $color = $colorMap[$langKey] ?? '#6366f1'; // indigo-500 par défaut
+            $color = $colorMap[$langKey] ?? '#6366f1'; 
             
             $result['colors'][] = $color;
             $result['details'][$langName] = [
@@ -293,7 +260,6 @@ class StatistiqueController extends Controller
             ];
         }
         
-        // Ajouter les "Autres" langages si nécessaire
         if ($otherLanguages['percentage'] > 0) {
             $result['labels'][] = 'Autres';
             $result['data'][] = round($otherLanguages['percentage'], 1);
@@ -311,12 +277,8 @@ class StatistiqueController extends Controller
         return $result;
     }
     
-    /**
-     * Récupère les données pour le heatmap d'activité
-     */
     private function getActivityHeatmap($userId, $startDate = null, $endDate = null)
     {
-        // Périodes de la journée
         $timeSlots = ['Matin', 'Après-midi', 'Soir'];
         $timeRanges = [
             [0, 12], // Matin (0h-12h)
@@ -367,9 +329,7 @@ class StatistiqueController extends Controller
         ];
     }
     
-    /**
-     * Récupère la progression par projet (temps passé)
-     */
+   
     private function getProjectProgression($userId, $startDate = null, $endDate = null, $limit = 5)
     {
         // Récupérer les temps par projet
@@ -418,10 +378,7 @@ class StatistiqueController extends Controller
         
         return $result;
     }
-    
-    /**
-     * Récupère l'heure la plus productive
-     */
+   
     private function getMostProductiveTime($userId, $startDate = null, $endDate = null)
     {
         $activities = Activity::whereHas('project', function($query) use ($userId) {
@@ -451,9 +408,7 @@ class StatistiqueController extends Controller
         return $hour . 'h-' . $nextHour . 'h';
     }
     
-    /**
-     * Récupère le jour le plus actif
-     */
+    
     private function getMostActiveDay($userId, $startDate = null, $endDate = null)
     {
         $activities = Activity::whereHas('project', function($query) use ($userId) {
@@ -481,9 +436,6 @@ class StatistiqueController extends Controller
         return $dayNames[$activities->day_of_week - 1];
     }
     
-    /**
-     * Calcule les badges obtenus par l'utilisateur
-     */
     private function calculateBadges($userId)
     {
         $badges = [
